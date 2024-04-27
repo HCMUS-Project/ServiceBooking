@@ -1,0 +1,113 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource commerce_db {
+  provider = "postgresql"
+  url      = env("POSTGRES_URI")
+}model Cart {
+    id          String     @id @default(uuid())
+    user_id     String
+    cartItems   CartItem[]
+    total_price Decimal    @commerce_db.Decimal(19, 2)
+    status      String
+    created_at  DateTime   @default(now())
+    updated_at  DateTime   @updatedAt
+    deleted_at  DateTime?
+}
+model CartItem {
+    cart_id    String
+    product_id String
+    quantity   Int
+    cart       Cart    @relation(fields: [cart_id], references: [id], onDelete: Cascade)
+    product    Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+
+    @@unique([cart_id, product_id])
+}
+model Category {
+    id          String    @id @default(uuid())
+    name        String    @unique
+    description String
+    domain      String
+    created_at  DateTime  @default(now())
+    updated_at  DateTime  @updatedAt
+    deleted_at  DateTime?
+
+    vouchers        Voucher[]
+    ProductCategory ProductCategory[]
+}
+model Order {
+    id                 String   @id @default(uuid())
+    user_id            String
+    product_ids        String[]
+    product_quantities Int[]
+    total_price        Decimal  @commerce_db.Decimal(19, 2)
+    status             String
+
+    created_at DateTime  @default(now())
+    updated_at DateTime  @updatedAt
+    deleted_at DateTime?
+}
+model Product {
+    id          String    @id @default(uuid())
+    name        String    @unique
+    price       Decimal   @commerce_db.Decimal(19, 2)
+    quantity    Int
+    description String
+    image       String[]
+    views       Int
+    rating      Decimal   @commerce_db.Decimal(19, 1)
+    created_at  DateTime  @default(now())
+    updated_at  DateTime  @updatedAt
+    deleted_at  DateTime?
+
+    reviews   Review[]
+    cartItems CartItem[]
+
+    // Define the many-to-many relationship with categories through a junction table
+    categories ProductCategory[]
+}
+model ProductCategory {
+    id       String   @id @default(uuid())
+    product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+    category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+    productId  String
+    categoryId String
+
+    @@unique([productId, categoryId])
+}
+model Review {
+    id         String  @id @default(uuid())
+    product_id String
+    user_id    String
+    rating     Decimal @commerce_db.Decimal(19, 1)
+    review     String
+
+    created_at DateTime  @default(now())
+    updated_at DateTime  @updatedAt
+    deleted_at DateTime?
+
+    product Product @relation(fields: [product_id], references: [id])
+}
+model Voucher {
+    id               String   @id @default(uuid())
+    voucher_name     String
+    voucher_code     String
+    max_discount     Decimal  @commerce_db.Decimal(19, 2)
+    min_app_value    Decimal  @commerce_db.Decimal(19, 2)
+    discount_percent Decimal  @commerce_db.Decimal(19, 2)
+    expire_at        DateTime
+
+    created_at DateTime  @default(now())
+    updated_at DateTime  @updatedAt
+    deleted_at DateTime?
+    Category   Category? @relation(fields: [categoryId], references: [id])
+    categoryId String?
+}
