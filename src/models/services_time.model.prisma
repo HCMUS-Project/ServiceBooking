@@ -1,0 +1,17 @@
+model ServiceTime {
+    id          String @id @default(uuid())
+    start_time  String
+    end_time    String
+    duration    Int
+    break_start String
+    break_end   String
+
+    // relation one-to-one with Services
+    service    Services @relation(fields: [service_id], references: [id])
+    service_id String   @unique
+
+    created_at DateTime  @default(now())
+    updated_at DateTime  @updatedAt
+    deleted_at DateTime?
+    servicesId String?
+}

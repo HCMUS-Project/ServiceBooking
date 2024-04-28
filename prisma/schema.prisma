@@ -5,109 +5,41 @@
 // Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
 generator client {
-  provider = "prisma-client-js"
+    provider = "prisma-client-js"
 }
 
 datasource commerce_db {
-  provider = "postgresql"
-  url      = env("POSTGRES_URI")
-}model Cart {
-    id          String     @id @default(uuid())
-    user_id     String
-    cartItems   CartItem[]
-    total_price Decimal    @commerce_db.Decimal(19, 2)
-    status      String
-    created_at  DateTime   @default(now())
-    updated_at  DateTime   @updatedAt
-    deleted_at  DateTime?
+    provider = "postgresql"
+    url      = env("POSTGRES_URI")
 }
-model CartItem {
-    cart_id    String
-    product_id String
-    quantity   Int
-    cart       Cart    @relation(fields: [cart_id], references: [id], onDelete: Cascade)
-    product    Product @relation(fields: [product_id], references: [id], onDelete: Cascade)
+model Services {
+    id            String       @id @default(uuid())
+    name          String       @unique
+    description   String
+    price         Float
+    rating        Float
+    views         Int
+    time_service  ServiceTime?
+    domain        String
+    created_at    DateTime     @default(now())
+    updated_at    DateTime     @updatedAt
+    deleted_at    DateTime?
+    serviceTimeId String?
+}
+model ServiceTime {
+    id          String @id @default(uuid())
+    start_time  String
+    end_time    String
+    duration    Int
+    break_start String
+    break_end   String
 
-    @@unique([cart_id, product_id])
-}
-model Category {
-    id          String    @id @default(uuid())
-    name        String    @unique
-    description String
-    domain      String
-    created_at  DateTime  @default(now())
-    updated_at  DateTime  @updatedAt
-    deleted_at  DateTime?
-
-    vouchers        Voucher[]
-    ProductCategory ProductCategory[]
-}
-model Order {
-    id                 String   @id @default(uuid())
-    user_id            String
-    product_ids        String[]
-    product_quantities Int[]
-    total_price        Decimal  @commerce_db.Decimal(19, 2)
-    status             String
+    // relation one-to-one with Services
+    service    Services @relation(fields: [service_id], references: [id])
+    service_id String   @unique
 
     created_at DateTime  @default(now())
     updated_at DateTime  @updatedAt
     deleted_at DateTime?
-}
-model Product {
-    id          String    @id @default(uuid())
-    name        String    @unique
-    price       Decimal   @commerce_db.Decimal(19, 2)
-    quantity    Int
-    description String
-    image       String[]
-    views       Int
-    rating      Decimal   @commerce_db.Decimal(19, 1)
-    created_at  DateTime  @default(now())
-    updated_at  DateTime  @updatedAt
-    deleted_at  DateTime?
-
-    reviews   Review[]
-    cartItems CartItem[]
-
-    // Define the many-to-many relationship with categories through a junction table
-    categories ProductCategory[]
-}
-model ProductCategory {
-    id       String   @id @default(uuid())
-    product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-    category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-
-    productId  String
-    categoryId String
-
-    @@unique([productId, categoryId])
-}
-model Review {
-    id         String  @id @default(uuid())
-    product_id String
-    user_id    String
-    rating     Decimal @commerce_db.Decimal(19, 1)
-    review     String
-
-    created_at DateTime  @default(now())
-    updated_at DateTime  @updatedAt
-    deleted_at DateTime?
-
-    product Product @relation(fields: [product_id], references: [id])
-}
-model Voucher {
-    id               String   @id @default(uuid())
-    voucher_name     String
-    voucher_code     String
-    max_discount     Decimal  @commerce_db.Decimal(19, 2)
-    min_app_value    Decimal  @commerce_db.Decimal(19, 2)
-    discount_percent Decimal  @commerce_db.Decimal(19, 2)
-    expire_at        DateTime
-
-    created_at DateTime  @default(now())
-    updated_at DateTime  @updatedAt
-    deleted_at DateTime?
-    Category   Category? @relation(fields: [categoryId], references: [id])
-    categoryId String?
+    servicesId String?
 }

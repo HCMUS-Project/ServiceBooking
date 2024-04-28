@@ -1,0 +1,14 @@
+model Services {
+    id            String       @id @default(uuid())
+    name          String       @unique
+    description   String
+    price         Float
+    rating        Float
+    views         Int
+    time_service  ServiceTime?
+    domain        String
+    created_at    DateTime     @default(now())
+    updated_at    DateTime     @updatedAt
+    deleted_at    DateTime?
+    serviceTimeId String?
+}

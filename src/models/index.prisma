@@ -1,3 +1,0 @@
-model HelloWord {
-    id String @id @default(uuid())
-}
