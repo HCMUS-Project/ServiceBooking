@@ -7,6 +7,19 @@ package services;
 service ServicesService {
     rpc CreateService (CreateServiceRequest) returns (CreateServiceResponse);
     rpc FindOne (FindOneRequest) returns (FindOneResponse);
+    rpc FindServices (FindServicesRequest) returns (FindServicesResponse);
+    rpc DeleteService (DeleteServiceRequest) returns (DeleteServiceResponse);
+}
+
+message FindServicesRequest {
+  userToken.User user = 1;
+  optional float price_lower = 2;
+  optional float price_higher = 3;
+  optional string name = 4;
+}
+
+message FindServicesResponse {
+  repeated CreateServiceResponse services = 1;
 }
 
 message CreateServiceRequest {
@@ -52,4 +65,13 @@ message FindOneResponse {
   string domain = 7;
   ServiceTime time_service = 8;
   int64 created_at = 9;
+}
+
+message DeleteServiceRequest{
+    userToken.User user = 1;
+    string id = 2;
+}
+
+message DeleteServiceResponse{
+    string result = 3;
 }

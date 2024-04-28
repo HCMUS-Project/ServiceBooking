@@ -16,4 +16,10 @@ class GrpcItemExitException extends RpcException {
     }
 }
 
-export { GrpcItemNotFoundException, GrpcItemExitException };
+class GrpcInvalidArgumentException extends RpcException {
+    constructor(error: string | object) {
+        super(typeof error === 'string' ? error : JSON.stringify(error)); // Chuyển đối tượng error thành chuỗi nếu cần
+    }
+}
+
+export { GrpcItemNotFoundException, GrpcItemExitException, GrpcInvalidArgumentException };
