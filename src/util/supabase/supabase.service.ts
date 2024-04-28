@@ -35,7 +35,7 @@ export class SupabaseService {
                 }
 
                 if (!typeMatch) {
-                    throw new Error('Invalid image data');
+                    throw new Error('Invalid image data type');
                 } else {
                     const imageType = typeMatch[1];
 
@@ -46,9 +46,9 @@ export class SupabaseService {
                     );
 
                     // Update image name with uuid
-                    const imageName = 'products/' + uuidv4();
+                    const imageName = 'service/' + uuidv4();
                     const { data, error } = await this.supabase.storage
-                        .from('datn.product')
+                        .from('datn.servicesBooking')
                         .upload(imageName, imageData, {
                             contentType: `image/${imageType}`, // use `image/png` for png
                         });
@@ -61,6 +61,23 @@ export class SupabaseService {
                 }
             }
             return imagesUrl;
+        } catch (error) {
+            throw new Error(error.message);
+        }
+    }
+
+    async deleteImage(imagesUrl: string[]): Promise<void> {
+        try {
+            for (const imageUrl of imagesUrl) {
+                const imageName = 'service/' + imageUrl.split('/').pop();
+                const { error } = await this.supabase.storage
+                    .from('datn.servicesBooking')
+                    .remove([imageName]);
+
+                if (error) {
+                    throw new Error(error.message);
+                }
+            }
         } catch (error) {
             throw new Error(error.message);
         }

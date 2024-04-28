@@ -17,10 +17,14 @@ import { PrismaService } from 'src/core/prisma/prisma.service';
 import { GrpcItemExitException, GrpcItemNotFoundException } from 'src/common/exceptions/exceptions';
 import { Injectable } from '@nestjs/common';
 import { IUserToken } from 'src/common/interfaces/user_token.interface';
+import { SupabaseService } from 'src/util/supabase/supabase.service';
 
 @Injectable()
 export class ServicesBookingService {
-    constructor(private prismaService: PrismaService) {}
+    constructor(
+        private prismaService: PrismaService,
+        private supabase: SupabaseService,
+    ) {}
 
     async create(data: ICreateServiceRequest): Promise<ICreateServiceResponse> {
         const { user, timeService, ...service } = data;
@@ -40,11 +44,16 @@ export class ServicesBookingService {
                 throw new GrpcItemExitException('SERVICE_EXIST');
             }
 
+            // update images into supabase storage
+            const imagesUrl = await this.supabase.uploadImageAndGetLink(service.images);
+            delete service.images;
+
             // create service and time service
             const serviceNew = await this.prismaService.services.create({
                 data: {
                     ...service,
                     domain: user.domain,
+                    images: imagesUrl,
                     // Set the time_service field with the ID of the newly created serviceTime
                     time_service: {
                         create: {
@@ -86,6 +95,8 @@ export class ServicesBookingService {
             if (!service) {
                 throw new GrpcItemNotFoundException('SERVICE_NOT_EXIST');
             }
+
+            console.log(service);
 
             return {
                 ...service,

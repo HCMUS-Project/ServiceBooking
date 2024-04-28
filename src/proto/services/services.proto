@@ -12,59 +12,62 @@ service ServicesService {
 }
 
 message FindServicesRequest {
-  userToken.User user = 1;
-  optional float price_lower = 2;
-  optional float price_higher = 3;
-  optional string name = 4;
+    userToken.User user = 1;
+    optional float price_lower = 2;
+    optional float price_higher = 3;
+    optional string name = 4;
 }
 
 message FindServicesResponse {
-  repeated CreateServiceResponse services = 1;
+    repeated CreateServiceResponse services = 1;
 }
 
 message CreateServiceRequest {
-  string name = 1;
-  string description = 2;
-  float price = 3;
-  ServiceTime time_service = 5;
-  userToken.User user = 6; 
+    string name = 1;
+    string description = 2;
+    float price = 3;
+    ServiceTime time_service = 5;
+    userToken.User user = 6; 
+    repeated string images = 7;
 }
 
 message ServiceTime {
-  string start_time = 1;
-  string end_time = 2;
-  int32 duration = 3;
-  string break_start = 4;
-  string break_end = 5;
+    string start_time = 1;
+    string end_time = 2;
+    int32 duration = 3;
+    string break_start = 4;
+    string break_end = 5;
 }
 
 message CreateServiceResponse {
-  string id = 1;
-  string name = 2;
-  string description = 3;
-  float price = 4;
-  float rating = 5;
-  int32 views = 6;
-  string domain = 7;
-  ServiceTime time_service = 8;
-  int64 created_at = 9;
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    float price = 4;
+    float rating = 5;
+    int32 views = 6;
+    string domain = 7;
+    ServiceTime time_service = 8;
+    int64 created_at = 9;
+    repeated string images = 10;
 }
 
 message FindOneRequest {
-  string id = 1;
-  userToken.User user = 2;
+    string id = 1;
+    userToken.User user = 2;
 }
 
 message FindOneResponse {
-  string id = 1;
-  string name = 2;
-  string description = 3;
-  float price = 4;
-  float rating = 5;
-  int32 views = 6;
-  string domain = 7;
-  ServiceTime time_service = 8;
-  int64 created_at = 9;
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    float price = 4;
+    float rating = 5;
+    int32 views = 6;
+    string domain = 7;
+    ServiceTime time_service = 8;
+    int64 created_at = 9;
+    repeated string images = 10;
 }
 
 message DeleteServiceRequest{
