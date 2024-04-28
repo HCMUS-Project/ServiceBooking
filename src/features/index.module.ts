@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
-import { ServicesModule } from './services/services.module';
+import { ServicesBookingModule } from './services/services_booking.module';
 
 @Module({
-    imports: [ServicesModule],
+    imports: [ServicesBookingModule],
 })
 export class FeaturesModule {}

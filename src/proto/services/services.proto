@@ -6,6 +6,7 @@ package services;
 
 service ServicesService {
     rpc CreateService (CreateServiceRequest) returns (CreateServiceResponse);
+    rpc FindOne (FindOneRequest) returns (FindOneResponse);
 }
 
 message CreateServiceRequest {
@@ -25,6 +26,23 @@ message ServiceTime {
 }
 
 message CreateServiceResponse {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  float price = 4;
+  float rating = 5;
+  int32 views = 6;
+  string domain = 7;
+  ServiceTime time_service = 8;
+  int64 created_at = 9;
+}
+
+message FindOneRequest {
+  string id = 1;
+  userToken.User user = 2;
+}
+
+message FindOneResponse {
   string id = 1;
   string name = 2;
   string description = 3;

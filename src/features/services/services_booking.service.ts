@@ -1,13 +1,19 @@
 import { GrpcPermissionDeniedException } from 'nestjs-grpc-exceptions';
-import { ICreateServiceRequest, ICreateServiceResponse } from './interface/services.interface';
+import {
+    ICreateServiceRequest,
+    ICreateServiceResponse,
+    IFindOneRequest,
+    IFindOneResponse,
+} from './interface/services.interface';
 import { getEnumKeyByEnumValue } from 'src/util/convert_enum/get_key_enum';
 import { Role } from 'src/proto_build/auth/user_token_pb';
 import { PrismaService } from 'src/core/prisma/prisma.service';
-import { GrpcItemExitException } from 'src/common/exceptions/exceptions';
+import { GrpcItemExitException, GrpcItemNotFoundException } from 'src/common/exceptions/exceptions';
 import { Injectable } from '@nestjs/common';
+import { IUserToken } from 'src/common/interfaces/user_token.interface';
 
 @Injectable()
-export class ServicesService {
+export class ServicesBookingService {
     constructor(private prismaService: PrismaService) {}
 
     async create(data: ICreateServiceRequest): Promise<ICreateServiceResponse> {
@@ -50,10 +56,6 @@ export class ServicesService {
                 },
             });
 
-            console.log(
-                await this.prismaService.services.findMany({ include: { time_service: true } }),
-            );
-
             return {
                 ...serviceNew,
                 createdAt: serviceNew.created_at.getTime(),
@@ -66,7 +68,34 @@ export class ServicesService {
         }
     }
 
-    async findOne() {}
+    async findOne(user: IUserToken, id: string): Promise<IFindOneResponse> {
+        try {
+            // find service by id
+            const service = await this.prismaService.services.findUnique({
+                where: { id, domain: user.domain },
+                include: { time_service: true },
+            });
+
+            // check service is exist
+            if (!service) {
+                throw new GrpcItemNotFoundException('SERVICE_NOT_EXIST');
+            }
+
+            return {
+                ...service,
+                timeService: {
+                    startTime: service.time_service.start_time,
+                    endTime: service.time_service.end_time,
+                    duration: service.time_service.duration,
+                    breakStart: service.time_service.break_start,
+                    breakEnd: service.time_service.break_end,
+                },
+                createdAt: service.created_at.getTime(),
+            };
+        } catch (error) {
+            throw error;
+        }
+    }
 
     async find() {}
 
