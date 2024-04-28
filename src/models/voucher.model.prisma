@@ -1,0 +1,14 @@
+model Voucher {
+  id                String      @id @default(uuid())
+  service_id        String      // Foreign key referencing the service this voucher belongs to
+  voucher_name      String
+  voucher_code      String
+  max_discount_value Float
+  min_app_value     Float
+  discount_percent  Float
+  expired_time      DateTime
+  updated_at        DateTime    @updatedAt
+  created_at        DateTime    @default(now())
+  
+  Service Services @relation(fields: [service_id], references: [id])
+}

@@ -12,19 +12,33 @@ datasource commerce_db {
     provider = "postgresql"
     url      = env("POSTGRES_URI")
 }
+model Review {
+  id            String      @id @default(uuid())
+  service_id    String      // Foreign key referencing the service this review is for
+  user_id       String      // ID of the user who created the review
+  description   String
+  rating        Float       // Assuming rating can be a decimal number
+  created_at    DateTime    @default(now())
+  updated_at    DateTime    @updatedAt
+  
+  // Define relationships
+  Service       Services     @relation(fields: [service_id], references: [id]) 
+}
 model Services {
-    id           String       @id @default(uuid())
-    name         String       @unique
-    description  String
-    price        Float
-    rating       Float        @default(0)
-    views        Int          @default(0)
-    images       String[]     @default([])
-    time_service ServiceTime?
-    domain       String
-    created_at   DateTime     @default(now())
-    updated_at   DateTime     @updatedAt
-    deleted_at   DateTime?
+  id           String       @id @default(uuid())
+  name         String       @unique
+  description  String
+  price        Float
+  rating       Float        @default(0)
+  views        Int          @default(0)
+  images       String[]     @default([])
+  time_service ServiceTime? 
+  domain       String
+  created_at   DateTime     @default(now())
+  updated_at   DateTime     @updatedAt
+  deleted_at   DateTime?
+  Voucher      Voucher[]
+  Review       Review[]
 }
 model ServiceTime {
     id          String @id @default(uuid())
@@ -41,4 +55,18 @@ model ServiceTime {
     created_at DateTime  @default(now())
     updated_at DateTime  @updatedAt
     deleted_at DateTime?
+}
+model Voucher {
+  id                String      @id @default(uuid())
+  service_id        String      // Foreign key referencing the service this voucher belongs to
+  voucher_name      String
+  voucher_code      String
+  max_discount_value Float
+  min_app_value     Float
+  discount_percent  Float
+  expired_time      DateTime
+  updated_at        DateTime    @updatedAt
+  created_at        DateTime    @default(now())
+  
+  Service Services @relation(fields: [service_id], references: [id])
 }
