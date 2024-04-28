@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+import "auth/user_token.proto";
+
+package services;
+
+service ServicesService {
+    rpc CreateService (CreateServiceRequest) returns (CreateServiceResponse);
+}
+
+message CreateServiceRequest {
+  string name = 1;
+  string description = 2;
+  float price = 3;
+  ServiceTime time_service = 5;
+  userToken.User user = 6; 
+}
+
+message ServiceTime {
+  string start_time = 1;
+  string end_time = 2;
+  int32 duration = 3;
+  string break_start = 4;
+  string break_end = 5;
+}
+
+message CreateServiceResponse {
+  string id = 1;
+  string name = 2;
+  string description = 3;
+  float price = 4;
+  float rating = 5;
+  int32 views = 6;
+  string domain = 7;
+  ServiceTime time_service = 8;
+  int64 created_at = 9;
+}

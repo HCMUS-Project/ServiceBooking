@@ -10,4 +10,10 @@ class GrpcItemNotFoundException extends RpcException {
     }
 }
 
-export { GrpcItemNotFoundException };
+class GrpcItemExitException extends RpcException {
+    constructor(itemName: string) {
+        super(`${itemName} not found`);
+    }
+}
+
+export { GrpcItemNotFoundException, GrpcItemExitException };
