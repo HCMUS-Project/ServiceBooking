@@ -1,0 +1,11 @@
+model Employee {
+    id         String            @id @default(uuid())
+    name       String
+    work_days  String[]
+    work_shift String[]
+    services   EmployeeService[]
+
+    created_at DateTime  @default(now())
+    updated_at DateTime  @updatedAt
+    deleted_at DateTime?
+}

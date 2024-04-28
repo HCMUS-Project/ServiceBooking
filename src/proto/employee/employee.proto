@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+import "auth/user_token.proto";
+
+package employee;
+
+service EmployeeService {
+  rpc GetEmployee(GetEmployeeRequest) returns (GetEmployeeResponse) {}
+}
+
+message CreateEmployeeRequest {
+    string name = 1;
+    repeated string work_day = 2;
+    repeated string work_shift = 3; 
+    string service_id = 4;
+    userToken.User user = 5;
+}
+
+message CreateEmployeeResponse {
+    string id = 1;
+}

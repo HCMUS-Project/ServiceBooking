@@ -1,12 +1,12 @@
 model Review {
-  id            String      @id @default(uuid())
-  service_id    String      // Foreign key referencing the service this review is for
-  user_id       String      // ID of the user who created the review
-  description   String
-  rating        Float       // Assuming rating can be a decimal number
-  created_at    DateTime    @default(now())
-  updated_at    DateTime    @updatedAt
-  
-  // Define relationships
-  Service       Services     @relation(fields: [service_id], references: [id]) 
+    id          String   @id @default(uuid())
+    service_id  String // Foreign key referencing the service this review is for
+    user_id     String // ID of the user who created the review
+    description String
+    rating      Float // Assuming rating can be a decimal number
+    created_at  DateTime @default(now())
+    updated_at  DateTime @updatedAt
+
+    // Define relationships
+    Service Services @relation(fields: [service_id], references: [id])
 }

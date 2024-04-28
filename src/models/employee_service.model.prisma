@@ -1,0 +1,8 @@
+model EmployeeService {
+    employeeId String
+    serviceId  String
+    employee   Employee @relation(fields: [employeeId], references: [id])
+    service    Services @relation(fields: [serviceId], references: [id])
+
+    @@id([employeeId, serviceId])
+}

@@ -129,11 +129,8 @@ export class ServicesBookingService {
         let filter: Filter = { domain };
 
         if (dataFilter.priceHigher || dataFilter.priceLower) filter.price = {};
-
         if (dataFilter.priceHigher) filter.price.gte = dataFilter.priceHigher;
-
         if (dataFilter.priceLower) filter.price.lte = dataFilter.priceLower;
-
         if (dataFilter.name) filter.name = { contains: dataFilter.name };
 
         return filter;

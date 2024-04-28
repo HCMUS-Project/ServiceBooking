@@ -12,33 +12,53 @@ datasource commerce_db {
     provider = "postgresql"
     url      = env("POSTGRES_URI")
 }
+model Employee {
+    id         String            @id @default(uuid())
+    name       String
+    work_days  String[]
+    work_shift String[]
+    services   EmployeeService[]
+
+    created_at DateTime  @default(now())
+    updated_at DateTime  @updatedAt
+    deleted_at DateTime?
+}
+model EmployeeService {
+    employeeId String
+    serviceId  String
+    employee   Employee @relation(fields: [employeeId], references: [id])
+    service    Services @relation(fields: [serviceId], references: [id])
+
+    @@id([employeeId, serviceId])
+}
 model Review {
-  id            String      @id @default(uuid())
-  service_id    String      // Foreign key referencing the service this review is for
-  user_id       String      // ID of the user who created the review
-  description   String
-  rating        Float       // Assuming rating can be a decimal number
-  created_at    DateTime    @default(now())
-  updated_at    DateTime    @updatedAt
-  
-  // Define relationships
-  Service       Services     @relation(fields: [service_id], references: [id]) 
+    id          String   @id @default(uuid())
+    service_id  String // Foreign key referencing the service this review is for
+    user_id     String // ID of the user who created the review
+    description String
+    rating      Float // Assuming rating can be a decimal number
+    created_at  DateTime @default(now())
+    updated_at  DateTime @updatedAt
+
+    // Define relationships
+    Service Services @relation(fields: [service_id], references: [id])
 }
 model Services {
-  id           String       @id @default(uuid())
-  name         String       @unique
-  description  String
-  price        Float
-  rating       Float        @default(0)
-  views        Int          @default(0)
-  images       String[]     @default([])
-  time_service ServiceTime? 
-  domain       String
-  created_at   DateTime     @default(now())
-  updated_at   DateTime     @updatedAt
-  deleted_at   DateTime?
-  Voucher      Voucher[]
-  Review       Review[]
+    id           String            @id @default(uuid())
+    name         String            @unique
+    description  String
+    price        Float
+    rating       Float             @default(0)
+    views        Int               @default(0)
+    images       String[]          @default([])
+    time_service ServiceTime?
+    domain       String
+    created_at   DateTime          @default(now())
+    updated_at   DateTime          @updatedAt
+    deleted_at   DateTime?
+    Voucher      Voucher[]
+    Review       Review[]
+    employees    EmployeeService[]
 }
 model ServiceTime {
     id          String @id @default(uuid())
