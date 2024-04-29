@@ -1,8 +1,8 @@
 model EmployeeService {
-    employeeId String
-    serviceId  String
-    employee   Employee @relation(fields: [employeeId], references: [id])
-    service    Services @relation(fields: [serviceId], references: [id])
+    employee_id String
+    service_id  String
+    employee    Employee @relation(fields: [employee_id], references: [id])
+    service     Services @relation(fields: [service_id], references: [id])
 
-    @@id([employeeId, serviceId])
+    @@id([employee_id, service_id])
 }
