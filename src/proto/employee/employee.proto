@@ -5,17 +5,73 @@ import "auth/user_token.proto";
 package employee;
 
 service EmployeeService {
-  rpc GetEmployee(GetEmployeeRequest) returns (GetEmployeeResponse) {}
+    rpc FindOneEmployee(FindOneEmployeeRequest) returns (FindOneEmployeeResponse) {}
+    rpc FindEmployee(FindEmployeeRequest) returns (FindEmployeeResponse) {}
+    rpc CreateEmployee(CreateEmployeeRequest) returns (CreateEmployeeResponse) {}
+    rpc UpdateEmployee(UpdateEmployeeRequest) returns (UpdateEmployeeResponse) {}
+    rpc DeleteEmployee(DeleteEmployeeRequest) returns (DeleteEmployeeResponse) {}
 }
 
-message GetEmployeeRequest {
+message Service {
+    string id = 1;
+    string name = 2;
+}
+
+message CreateEmployeeRequest {
     string name = 1;
-    repeated string work_day = 2;
-    repeated string work_shift = 3; 
-    string service_id = 4;
+    repeated string work_days = 2;
+    repeated string work_shift = 3;
+    repeated string services = 4;
     userToken.User user = 5;
 }
 
-message GetEmployeeResponse {
+message CreateEmployeeResponse {
     string id = 1;
+}
+
+message FindOneEmployeeRequest {
+    string id = 1;
+    userToken.User user = 2;
+}
+
+message FindOneEmployeeResponse {
+    string id = 1;
+    string name = 2;
+    repeated string work_days = 3;
+    repeated string work_shift = 4;
+    repeated Service services = 5;
+}
+
+message FindEmployeeRequest{
+    optional string name = 1;
+    repeated string work_days = 2;
+    repeated string work_shift = 3;
+    repeated string services = 4;
+    optional userToken.User user = 5;
+}
+
+message FindEmployeeResponse{
+    repeated FindOneEmployeeResponse employees = 1;
+}
+
+message UpdateEmployeeRequest {
+    string name = 1;
+    repeated string work_days = 2;
+    repeated string work_shift = 3;
+    repeated string services = 4;
+    userToken.User user = 5;
+    string id = 6;
+}
+
+message UpdateEmployeeResponse {
+    string id = 1;
+}
+
+message DeleteEmployeeRequest {
+    string id = 1;
+    userToken.User user = 2;
+}
+
+message DeleteEmployeeResponse {
+    string result = 1;
 }
