@@ -8,7 +8,7 @@ service EmployeeService {
   rpc GetEmployee(GetEmployeeRequest) returns (GetEmployeeResponse) {}
 }
 
-message CreateEmployeeRequest {
+message GetEmployeeRequest {
     string name = 1;
     repeated string work_day = 2;
     repeated string work_shift = 3; 
@@ -16,6 +16,6 @@ message CreateEmployeeRequest {
     userToken.User user = 5;
 }
 
-message CreateEmployeeResponse {
+message GetEmployeeResponse {
     string id = 1;
 }

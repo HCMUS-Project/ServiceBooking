@@ -1,6 +1,7 @@
 syntax = "proto3";
 
 import "services/services.proto";
+import "voucher/voucher.proto";
 
 package main;
 
