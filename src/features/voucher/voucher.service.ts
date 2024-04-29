@@ -17,7 +17,7 @@ import { GrpcPermissionDeniedException } from 'nestjs-grpc-exceptions';
 import { getEnumKeyByEnumValue } from 'src/util/convert_enum/get_key_enum';
 import { Role } from 'src/proto_build/auth/user_token_pb';
 import { GrpcItemExitException, GrpcItemNotFoundException } from 'src/common/exceptions/exceptions';
-import {IDeleteServiceResponse} from '../services/interface/services.interface';
+import { IDeleteServiceResponse } from '../services/interface/services.interface';
 
 @Injectable()
 export class VoucherService {
@@ -171,8 +171,7 @@ export class VoucherService {
         }
     }
 
-    async remove(role: Role, id: string): Promise<IDeleteVoucherResponse> { 
-        
+    async remove(role: Role, id: string): Promise<IDeleteVoucherResponse> {
         // check role of user
         if (role.toString() !== getEnumKeyByEnumValue(Role, Role.TENANT)) {
             throw new GrpcPermissionDeniedException('PERMISSION_DENIED');

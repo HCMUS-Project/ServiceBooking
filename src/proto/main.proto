@@ -3,6 +3,7 @@ syntax = "proto3";
 import "services/services.proto";
 import "employee/employee.proto";
 import "voucher/voucher.proto";
+import "review/review.proto";
 
 package main;
 

@@ -9,6 +9,7 @@ import appConfig from './app/app.config';
 import dataBaseConfig from './database/postgres/postgres.config';
 import nodeMailerConfig from './node_mailer/node_mailer.config';
 import supabaseConfig from './supabase/supabase.config';
+import mongoConfig from './database/mongo/mongo.config';
 
 @Global()
 @Module({
@@ -16,7 +17,7 @@ import supabaseConfig from './supabase/supabase.config';
         NestConfigModule.forRoot({
             envFilePath: ['.env'],
             isGlobal: true,
-            load: [appConfig, dataBaseConfig, nodeMailerConfig, supabaseConfig],
+            load: [appConfig, mongoConfig,dataBaseConfig, nodeMailerConfig, supabaseConfig],
         }),
     ],
     controllers: [],
