@@ -21,7 +21,6 @@ import { GrpcItemNotFoundException } from 'src/common/exceptions/exceptions';
 import { WorkShift } from 'src/common/enums/workShift';
 import { WorkDays } from 'src/common/enums/workDays';
 import { Injectable } from '@nestjs/common';
-import { FindAllVouchersResponse } from 'src/proto_build/voucher/voucher_pb';
 
 @Injectable()
 export class EmployeeService {

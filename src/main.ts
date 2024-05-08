@@ -14,7 +14,7 @@ async function bootstrap() {
         transport: Transport.GRPC,
         bufferLogs: true,
         options: {
-            package: ['main', 'services', 'voucher', 'employee', 'review'],
+            package: ['main', 'services', 'voucher', 'employee', 'review', 'booking'],
             protoPath: join(__dirname, '../src/proto/main.proto'),
             url: `0.0.0.0:${port}`,
             loader: {
