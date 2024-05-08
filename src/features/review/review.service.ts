@@ -77,28 +77,28 @@ export class ReviewService {
     }
 
     async findAll(role: Role): Promise<IFindAllReviewsResponse> {
-      try {
-          // find all categories by domain
-          // check role of user
-          // if (role.toString() !== getEnumKeyByEnumValue(Role, Role.TENANT)) {
-          //     throw new GrpcPermissionDeniedException('PERMISSION_DENIED');
-          // }
-          const reviews = await this.prismaService.review.findMany();
-          // console.log('abc')
-          return {
-            reviews: reviews.map(review => ({
-                  reviewsList: [],
-                  ...review,
-                  serviceId: review.service_id,
-                  userId: review.user_id,
-                  createdAt: review.created_at.toString(),
-                  updatedAt: review.updated_at.toString(),
-              })),
-          };
-      } catch (error) {
-          throw error;
-      }
-  }
+        try {
+            // find all categories by domain
+            // check role of user
+            // if (role.toString() !== getEnumKeyByEnumValue(Role, Role.TENANT)) {
+            //     throw new GrpcPermissionDeniedException('PERMISSION_DENIED');
+            // }
+            const reviews = await this.prismaService.review.findMany();
+            // console.log('abc')
+            return {
+                reviews: reviews.map(review => ({
+                    reviewsList: [],
+                    ...review,
+                    serviceId: review.service_id,
+                    userId: review.user_id,
+                    createdAt: review.created_at.toString(),
+                    updatedAt: review.updated_at.toString(),
+                })),
+            };
+        } catch (error) {
+            throw error;
+        }
+    }
 
     async findOne(data: IFindOneReviewRequest): Promise<IFindOneReviewResponse> {
         const { user, id } = data;
@@ -132,70 +132,70 @@ export class ReviewService {
             throw error;
         }
     }
-    
+
     async update(data: IEditReviewRequest): Promise<IEditReviewResponse> {
-      const { user, ...dataUpdate } = data;
-      // check role of user
-      // if (user.role.toString() !== getEnumKeyByEnumValue(Role, Role.TENANT)) {
-      //     throw new GrpcPermissionDeniedException('PERMISSION_DENIED');
-      // }
-      try {
-          // Find the category first
-          const review = await this.prismaService.review.findUnique({
-              where: { id: dataUpdate.id },
-          });
+        const { user, ...dataUpdate } = data;
+        // check role of user
+        // if (user.role.toString() !== getEnumKeyByEnumValue(Role, Role.TENANT)) {
+        //     throw new GrpcPermissionDeniedException('PERMISSION_DENIED');
+        // }
+        try {
+            // Find the category first
+            const review = await this.prismaService.review.findUnique({
+                where: { id: dataUpdate.id },
+            });
 
-          // console.log(voucher)
+            // console.log(voucher)
 
-          // If the category does not exist, throw an error
-          if (!review) {
-              throw new GrpcItemNotFoundException('Review');
-          }
+            // If the category does not exist, throw an error
+            if (!review) {
+                throw new GrpcItemNotFoundException('Review');
+            }
 
-          // If the category exists, perform the update
-          const updatedReview = await this.prismaService.review.update({
-              where: { id: dataUpdate.id },
-              data: {
-                  description: dataUpdate.description,
-                  rating: dataUpdate.rating
-              },
-          });
-          // console.log(updatedVoucher)
-          return {
-              result: 'success edit review',
-          };
-      } catch (error) {
-          throw error;
-      }
-  }
-
-  async remove(role: Role, id: string): Promise<IDeleteReviewResponse> {
-    // check role of user
-    if (role.toString() !== getEnumKeyByEnumValue(Role, Role.USER)) {
-        throw new GrpcPermissionDeniedException('PERMISSION_DENIED');
+            // If the category exists, perform the update
+            const updatedReview = await this.prismaService.review.update({
+                where: { id: dataUpdate.id },
+                data: {
+                    description: dataUpdate.description,
+                    rating: dataUpdate.rating,
+                },
+            });
+            // console.log(updatedVoucher)
+            return {
+                result: 'success edit review',
+            };
+        } catch (error) {
+            throw error;
+        }
     }
 
-    try {
-        // check voucher is exist
-        if (
-            (await this.prismaService.review.count({
+    async remove(role: Role, id: string): Promise<IDeleteReviewResponse> {
+        // check role of user
+        if (role.toString() !== getEnumKeyByEnumValue(Role, Role.USER)) {
+            throw new GrpcPermissionDeniedException('PERMISSION_DENIED');
+        }
+
+        try {
+            // check voucher is exist
+            if (
+                (await this.prismaService.review.count({
+                    where: { id },
+                })) == 0
+            )
+                throw new GrpcItemNotFoundException('Review');
+
+            // delete service;
+            // await this.prismaService.voucher.delete({
+            //     where: { id: id },
+            // });
+
+            await this.prismaService.review.delete({
                 where: { id },
-            })) == 0
-        )
-            throw new GrpcItemNotFoundException('Review');
+            });
 
-        // delete service;
-        // await this.prismaService.voucher.delete({
-        //     where: { id: id },
-        // });
-
-        await this.prismaService.review.delete({
-            where: { id },
-        });
-
-        return { result: 'success delete review' };
-    } catch (error) {
-        throw error;
+            return { result: 'success delete review' };
+        } catch (error) {
+            throw error;
+        }
     }
-}
 }

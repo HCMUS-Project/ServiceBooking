@@ -1,0 +1,76 @@
+syntax = "proto3";
+
+import "auth/user_token.proto";
+
+package booking;
+
+service BookingService {
+    rpc CreateBooking(CreateBookingRequest) returns (CreateBookingResponse);
+    // rpc GetBooking(GetBookingRequest) returns (GetBookingResponse);
+    rpc FindOne(FindOneRequest) returns (FindOneResponse);
+    rpc FindSlotBookings(FindSlotBookingsRequest) returns (FindSlotBookingsResponse);
+    // rpc UpdateBooking(UpdateBookingRequest) returns (UpdateBookingResponse);
+    // rpc DeleteBooking(DeleteBookingRequest) returns (DeleteBookingResponse);
+}
+
+message Emp{
+    string id = 1;
+    string name = 2;
+}
+
+message Service{
+    string id = 1;
+    string name = 2;
+}
+
+message SlotBooking{
+    string date = 1;
+    string service = 2;
+    repeated Emp employees = 3;
+    string start_time = 4;
+    string end_time = 5;
+}
+
+message FindSlotBookingsRequest{
+    userToken.User user = 1;
+    string date = 2;
+    string service = 3;
+    optional string employee = 4;
+    optional string start_time = 5;
+    optional string end_time = 6;
+}
+
+message FindSlotBookingsResponse{
+    repeated SlotBooking slot_bookings = 1;
+}
+
+message CreateBookingRequest{
+    userToken.User user = 1;
+    string date = 2;
+    string service = 3;
+    optional string employee = 4;
+    string start_time = 5;
+    string note = 6;
+}
+
+message CreateBookingResponse{
+    string id = 1;
+}
+
+message FindOneRequest{
+    string id = 1;
+    userToken.User user = 2;
+}
+
+message FindOneResponse{
+    string id = 1;
+    string start_time = 2;
+    string end_time = 3;
+    string note = 4;
+    string date = 5;
+    string status = 6;
+    bool is_paid = 7;
+    string user = 8;
+    Emp employee = 9;
+    Service service = 10;
+}

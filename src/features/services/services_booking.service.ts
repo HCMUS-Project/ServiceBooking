@@ -45,7 +45,8 @@ export class ServicesBookingService {
             }
 
             // update images into supabase storage
-            const imagesUrl = await this.supabase.uploadImageAndGetLink(service.images);
+            // const imagesUrl = await this.supabase.uploadImageAndGetLink(service.images);
+            const imagesUrl = [''];
             delete service.images;
 
             // create service and time service
@@ -95,8 +96,6 @@ export class ServicesBookingService {
             if (!service) {
                 throw new GrpcItemNotFoundException('SERVICE_NOT_EXIST');
             }
-
-            console.log(service);
 
             return {
                 ...service,
@@ -150,7 +149,6 @@ export class ServicesBookingService {
 
         // get filter data
         const filter = this.createFilter(dataFilter, user.domain);
-        console.log(filter);
         try {
             // find all services
             const services = await this.prismaService.services.findMany({
