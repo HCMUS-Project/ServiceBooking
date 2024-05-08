@@ -6,33 +6,33 @@ import { RpcException } from '@nestjs/microservices';
 
 class GrpcItemNotFoundException extends RpcException {
     constructor(itemName: string) {
-        super(`${itemName} not found`);
+        super(`${itemName}`);
         this.message = JSON.stringify({
             error: this.message,
             type: 'string',
-            exceptionName: 'RpcException'
+            exceptionName: 'RpcException',
         });
     }
 }
 
 class GrpcItemExitException extends RpcException {
     constructor(itemName: string) {
-        super(`${itemName} not found`);
+        super(`${itemName}`);
         this.message = JSON.stringify({
             error: this.message,
             type: 'string',
-            exceptionName: 'RpcException'
+            exceptionName: 'RpcException',
         });
     }
 }
 
 class GrpcInvalidArgumentException extends RpcException {
     constructor(error: string | object) {
-        super(typeof error === 'string' ? error : JSON.stringify(error)); // Chuyển đối tượng error thành chuỗi nếu cần
+        super(`${error}`);
         this.message = JSON.stringify({
             error: this.message,
             type: 'string',
-            exceptionName: 'RpcException'
+            exceptionName: 'RpcException',
         });
     }
 }

@@ -4,6 +4,7 @@ import "services/services.proto";
 import "employee/employee.proto";
 import "voucher/voucher.proto";
 import "review/review.proto";
+import "booking/booking.proto";
 
 package main;
 
