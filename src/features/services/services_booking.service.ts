@@ -10,6 +10,8 @@ import {
     IFindOneResponse,
     IFindServiceRequest,
     IFindServiceResponse,
+    IUpdateServiceRequest,
+    IUpdateServiceResponse,
 } from './interface/services.interface';
 import { getEnumKeyByEnumValue } from 'src/util/convert_enum/get_key_enum';
 import { Role } from 'src/proto_build/auth/user_token_pb';
@@ -45,8 +47,8 @@ export class ServicesBookingService {
             }
 
             // update images into supabase storage
-            // const imagesUrl = await this.supabase.uploadImageAndGetLink(service.images);
-            const imagesUrl = [''];
+            const imagesUrl = await this.supabase.uploadImageAndGetLink(service.images);
+            // const imagesUrl = [''];
             delete service.images;
 
             // create service and time service
@@ -174,8 +176,6 @@ export class ServicesBookingService {
         }
     }
 
-    async update() {}
-
     async delete(data: IDeleteServiceRequest): Promise<IDeleteServiceResponse> {
         const { user, id } = data;
 
@@ -203,6 +203,61 @@ export class ServicesBookingService {
             });
 
             return { result: 'success' };
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async update(data: IUpdateServiceRequest): Promise<IUpdateServiceResponse> {
+        const { user, timeService, id, ...service } = data;
+
+        // check role of user
+        if (user.role.toString() !== getEnumKeyByEnumValue(Role, Role.TENANT)) {
+            throw new GrpcPermissionDeniedException('PERMISSION_DENIED');
+        }
+
+        try {
+            // check service is exist
+            if (
+                (await this.prismaService.services.count({
+                    where: { id, domain: user.domain },
+                })) == 0
+            )
+                throw new GrpcItemNotFoundException('SERVICE_NOT_EXIST');
+
+            // update images into supabase storage
+            const imagesUrl = await this.supabase.uploadImageAndGetLink(service.images);
+            // const imagesUrl = [''];
+            delete service.images;
+
+            // update service and time service
+            const serviceNew = await this.prismaService.services.update({
+                where: { id },
+                data: {
+                    ...service,
+                    images: imagesUrl,
+                    time_service: {
+                        update: {
+                            start_time: timeService.startTime,
+                            end_time: timeService.endTime,
+                            duration: timeService.duration,
+                            break_start: timeService.breakStart,
+                            break_end: timeService.breakEnd,
+                        },
+                    },
+                },
+                include: {
+                    time_service: true,
+                },
+            });
+
+            return {
+                ...serviceNew,
+                createdAt: serviceNew.created_at.getTime(),
+                timeService: {
+                    ...timeService,
+                },
+            };
         } catch (error) {
             throw error;
         }

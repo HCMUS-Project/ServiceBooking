@@ -10,6 +10,8 @@ import {
     IFindOneRequest,
     IFindOneResponse,
     IFindServiceResponse,
+    IUpdateServiceRequest,
+    IUpdateServiceResponse,
 } from './interface/services.interface';
 
 @Controller()
@@ -34,5 +36,10 @@ export class ServicesBookingController {
     @GrpcMethod('ServicesService', 'DeleteService')
     async deleteService(data: IDeleteServiceRequest): Promise<IDeleteServiceResponse> {
         return await this.servicesBookingService.delete(data);
+    }
+
+    @GrpcMethod('ServicesService', 'UpdateService')
+    async updateService(data: IUpdateServiceRequest): Promise<IUpdateServiceResponse> {
+        return await this.servicesBookingService.update(data);
     }
 }

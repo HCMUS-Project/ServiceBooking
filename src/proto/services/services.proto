@@ -9,6 +9,7 @@ service ServicesService {
     rpc FindOne (FindOneRequest) returns (FindOneResponse);
     rpc FindServices (FindServicesRequest) returns (FindServicesResponse);
     rpc DeleteService (DeleteServiceRequest) returns (DeleteServiceResponse);
+    rpc UpdateService (UpdateServiceRequest) returns (UpdateServiceResponse);
 }
 
 message FindServicesRequest {
@@ -40,6 +41,29 @@ message ServiceTime {
 }
 
 message CreateServiceResponse {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    float price = 4;
+    float rating = 5;
+    int32 views = 6;
+    string domain = 7;
+    ServiceTime time_service = 8;
+    int64 created_at = 9;
+    repeated string images = 10;
+}
+
+message UpdateServiceRequest {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    float price = 4;
+    ServiceTime time_service = 5;
+    userToken.User user = 6;
+    repeated string images = 7;
+}
+
+message UpdateServiceResponse {
     string id = 1;
     string name = 2;
     string description = 3;

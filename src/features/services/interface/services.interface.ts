@@ -7,6 +7,8 @@ import {
     FindOneResponse,
     FindServicesRequest,
     FindServicesResponse,
+    UpdateServiceRequest,
+    UpdateServiceResponse,
 } from 'src/proto_build/services/services_pb';
 
 export interface ICreateServiceRequest extends Omit<CreateServiceRequest.AsObject, 'imagesList'> {
@@ -28,3 +30,10 @@ export interface IFindServiceResponse extends Omit<FindServicesResponse.AsObject
 
 export interface IDeleteServiceRequest extends DeleteServiceRequest.AsObject {}
 export interface IDeleteServiceResponse extends DeleteServiceResponse.AsObject {}
+
+export interface IUpdateServiceRequest extends Omit<UpdateServiceRequest.AsObject, 'imagesList'> {
+    images: string[];
+}
+export interface IUpdateServiceResponse extends Omit<UpdateServiceResponse.AsObject, 'imagesList'> {
+    images: string[];
+}
