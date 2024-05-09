@@ -15,7 +15,7 @@ export class SupabaseService {
     }
 
     async getSupabaseStorageImage(imageFilename, supabase): Promise<string> {
-        console.log(imageFilename, supabase)
+        // console.log(imageFilename, supabase)
         const { data } = supabase.storage.from('datn.serviceBooking').getPublicUrl(imageFilename);
 
         if (data) {
