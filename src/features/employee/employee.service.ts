@@ -27,7 +27,7 @@ export class EmployeeService {
     constructor(private prismaService: PrismaService) {}
 
     async create(data: ICreateEmployeeRequest): Promise<ICreateEmployeeResponse> {
-        const { user, name, workDays, workShift, services } = data;
+        const { user, firstName, lastName, email, workDays, workShift, services } = data;
 
         // check role of user
         if (user.role.toString() !== getEnumKeyByEnumValue(Role, Role.TENANT))
@@ -68,7 +68,9 @@ export class EmployeeService {
             // create employee
             const employee = await this.prismaService.employee.create({
                 data: {
-                    name,
+                    first_name: firstName,
+                    last_name: lastName,
+                    email,
                     work_days: workDays,
                     work_shift: workShift,
                 },
@@ -113,7 +115,9 @@ export class EmployeeService {
 
             return {
                 id: employee.id,
-                name: employee.name,
+                firstName: employee.first_name,
+                lastName: employee.last_name,
+                email: employee.email,
                 workDays: employee.work_days,
                 workShift: employee.work_shift,
                 services: services,
@@ -145,7 +149,9 @@ export class EmployeeService {
                 orderBy: { created_at: 'desc' },
                 select: {
                     id: true,
-                    name: true,
+                    first_name: true,
+                    last_name: true,
+                    email: true,
                     work_days: true,
                     work_shift: true,
                     services: {
@@ -161,7 +167,9 @@ export class EmployeeService {
                     );
                     return {
                         id: employee.id,
-                        name: employee.name,
+                        firstName: employee.first_name,
+                        lastName: employee.last_name,
+                        email: employee.email,
                         workDays: employee.work_days,
                         workShift: employee.work_shift,
                         services: services,
@@ -174,7 +182,7 @@ export class EmployeeService {
     }
 
     async update(data: IUpdateEmployeeRequest): Promise<IUpdateEmployeeResponse> {
-        const { user, id, name, workDays, workShift, services } = data;
+        const { user, id, firstName, lastName, email, workDays, workShift, services } = data;
 
         // check role of user
         if (user.role.toString() !== getEnumKeyByEnumValue(Role, Role.TENANT))
@@ -220,7 +228,9 @@ export class EmployeeService {
             await this.prismaService.employee.update({
                 where: { id },
                 data: {
-                    name,
+                    first_name: firstName,
+                    last_name: lastName,
+                    email,
                     work_days: workDays,
                     work_shift: workShift,
                 },

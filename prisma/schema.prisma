@@ -31,8 +31,10 @@ model Booking {
     Employee Employee @relation(fields: [employee_id], references: [id])
 }
 model Employee {
-    id         String            @id @default(uuid())
-    name       String
+    id         String @id @default(uuid())
+    first_name String
+    last_name  String
+    email      String
     work_days  String[]
     work_shift String[]
     services   EmployeeService[]
@@ -52,6 +54,7 @@ model EmployeeService {
 }
 model Review {
     id          String   @id @default(uuid())
+    type        String   @default("booking")
     service_id  String // Foreign key referencing the service this review is for
     user_id     String // ID of the user who created the review
     description String
@@ -98,6 +101,7 @@ model ServiceTime {
 }
 model Voucher {
     id                 String   @id @default(uuid())
+    type               String   @default("booking")
     service_id         String // Foreign key referencing the service this voucher belongs to
     voucher_name       String
     voucher_code       String

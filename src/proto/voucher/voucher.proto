@@ -25,14 +25,15 @@ message CreateVoucherRequest {
 
 message Voucher{
     string id = 1;
-    string service_id = 2;
-    string voucher_name = 3;
-    string voucher_code = 4;
-    float max_discount_value = 5;
-    float min_app_value = 6;
-    float discount_percent = 7;
-    string expired_time = 8;
-    string created_at = 9;
+    string type = 2;
+    string service_id = 3;
+    string voucher_name = 4;
+    string voucher_code = 5;
+    float max_discount_value = 6;
+    float min_app_value = 7;
+    float discount_percent = 8;
+    string expired_time = 9;
+    string created_at = 10;
 }
 
 message CreateVoucherResponse {

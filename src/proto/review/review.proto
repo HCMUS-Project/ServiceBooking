@@ -22,12 +22,13 @@ message CreateReviewRequest {
 
 message Review {
     string id = 1;
-    string service_id = 2;
-    string user_id = 3;
-    string description = 4;
-    float rating = 5;
-    string created_at = 6;
-    string updated_at = 7;
+    string type = 2;
+    string service_id = 3;
+    string user_id = 4;
+    string description = 5;
+    float rating = 6;
+    string created_at = 7;
+    string updated_at = 8;
 }
 
 message CreateReviewResponse {

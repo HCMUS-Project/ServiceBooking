@@ -1,5 +1,6 @@
 model Voucher {
     id                 String   @id @default(uuid())
+    type               String   @default("booking")
     service_id         String // Foreign key referencing the service this voucher belongs to
     voucher_name       String
     voucher_code       String

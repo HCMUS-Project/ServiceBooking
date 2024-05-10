@@ -103,7 +103,9 @@ export class BookingService {
                 },
                 select: {
                     id: true,
-                    name: true,
+                    first_name: true,
+                    last_name: true,
+                    email: true,
                     work_shift: true,
                     services: {
                         select: { service: true },
@@ -118,7 +120,12 @@ export class BookingService {
                         .filter(emp =>
                             this.checkAvailableSlotWithEmployee(slotBooking, emp.work_shift),
                         )
-                        .map(emp => ({ id: emp.id, name: emp.name }));
+                        .map(emp => ({
+                            id: emp.id,
+                            firstName: emp.first_name,
+                            lastName: emp.last_name,
+                            email: emp.email,
+                        }));
 
                     // check employee is booked
                     employeesForSlot = await Promise.all(
@@ -187,7 +194,9 @@ export class BookingService {
                 },
                 select: {
                     id: true,
-                    name: true,
+                    first_name: true,
+                    last_name: true,
+                    email: true,
                     work_shift: true,
                     services: {
                         select: { service: true },
@@ -203,7 +212,12 @@ export class BookingService {
                         emp.work_shift,
                     ),
                 )
-                .map(emp => ({ id: emp.id, name: emp.name }));
+                .map(emp => ({
+                    id: emp.id,
+                    firstName: emp.first_name,
+                    lastName: emp.last_name,
+                    email: emp.email,
+                }));
 
             if (employeesForSlot.length == 0) throw new GrpcItemNotFoundException('NO_EMPLOYEE');
 
@@ -259,7 +273,9 @@ export class BookingService {
                     Employee: {
                         select: {
                             id: true,
-                            name: true,
+                            first_name: true,
+                            last_name: true,
+                            email: true,
                         },
                     },
                     Service: {
@@ -283,7 +299,9 @@ export class BookingService {
                 status: booking.status,
                 employee: {
                     id: booking.Employee.id,
-                    name: booking.Employee.name,
+                    firstName: booking.Employee.first_name,
+                    lastName: booking.Employee.last_name,
+                    email: booking.Employee.email,
                 },
                 service: {
                     id: booking.Service.id,
@@ -312,7 +330,9 @@ export class BookingService {
                     Employee: {
                         select: {
                             id: true,
-                            name: true,
+                            first_name: true,
+                            last_name: true,
+                            email: true,
                         },
                     },
                     Service: {
@@ -338,7 +358,9 @@ export class BookingService {
                 status: booking.status,
                 employee: {
                     id: booking.Employee.id,
-                    name: booking.Employee.name,
+                    firstName: booking.Employee.first_name,
+                    lastName: booking.Employee.last_name,
+                    email: booking.Employee.email,
                 },
                 service: {
                     id: booking.Service.id,

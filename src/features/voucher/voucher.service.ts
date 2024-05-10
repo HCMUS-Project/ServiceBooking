@@ -79,6 +79,7 @@ export class VoucherService {
                 vouchers: vouchers.map(voucher => ({
                     vouchersList: [],
                     id: voucher.id,
+                    type: voucher.type,
                     serviceId: voucher.service_id,
                     voucherName: voucher.voucher_name,
                     voucherCode: voucher.voucher_code,
@@ -113,6 +114,7 @@ export class VoucherService {
 
             const voucherResult = {
                 id: voucher.id,
+                type: voucher.type,
                 serviceId: voucher.service_id,
                 voucherName: voucher.voucher_name,
                 voucherCode: voucher.voucher_code,

@@ -1,6 +1,8 @@
 model Employee {
-    id         String            @id @default(uuid())
-    name       String
+    id         String @id @default(uuid())
+    first_name String
+    last_name  String
+    email      String
     work_days  String[]
     work_shift String[]
     services   EmployeeService[]

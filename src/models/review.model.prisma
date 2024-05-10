@@ -1,5 +1,6 @@
 model Review {
     id          String   @id @default(uuid())
+    type        String   @default("booking")
     service_id  String // Foreign key referencing the service this review is for
     user_id     String // ID of the user who created the review
     description String
