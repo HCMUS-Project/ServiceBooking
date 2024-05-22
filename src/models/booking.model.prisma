@@ -13,6 +13,6 @@ model Booking {
     updated_at DateTime  @updatedAt
     deleted_at DateTime?
 
-    Service  Services @relation(fields: [service_id], references: [id])
-    Employee Employee @relation(fields: [employee_id], references: [id])
+    Service  Services @relation(fields: [service_id], references: [id], onDelete: Cascade)
+    Employee Employee @relation(fields: [employee_id], references: [id], onDelete: Cascade)
 }

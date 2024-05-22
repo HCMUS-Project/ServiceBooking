@@ -9,5 +9,5 @@ model Review {
     updated_at  DateTime @updatedAt
 
     // Define relationships
-    Service Services @relation(fields: [service_id], references: [id])
+    Service Services @relation(fields: [service_id], references: [id], onDelete: Cascade)
 }
