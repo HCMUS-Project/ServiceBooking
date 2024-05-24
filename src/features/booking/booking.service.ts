@@ -49,7 +49,7 @@ export class BookingService {
     }
 
     checkAvailableSlotWithEmployee(time: Date, workShift: string[]): boolean {
-        const hours = time.getUTCHours();
+        const hours = time.getUTCHours(); 
         const shift =
             hours >= 6 && hours < 12
                 ? WorkShift.MORNING
