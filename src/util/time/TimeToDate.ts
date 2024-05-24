@@ -6,6 +6,6 @@ export function convertTimeStringsToDateObjects(timeString: string, date = new D
     let dateStr = yyyy + '-' + mm + '-' + dd;
 
     let convertDate = new Date(dateStr + ' ' + timeString);
-
+    convertDate.setHours(convertDate.getHours() + 7)
     return convertDate;
 }

@@ -129,18 +129,22 @@ export class EmployeeService {
 
     async find(data: IFindEmployeeRequest): Promise<IFindEmployeeResponse> {
         // filter data
-        const filter = ['work_days', 'work_shift', 'services', 'name'].reduce((acc, key) => {
+        const filter = ['workDays', 'workShift', 'services', 'name'].reduce((acc, key) => {
             if (data[key]) {
                 if (key === 'services') {
                     acc[key] = { some: { service_id: { in: data[key] } } };
                 } else if (key === 'name') {
                     acc[key] = { contains: data[key] };
-                } else {
-                    acc[key] = { hasEvery: data[key] };
+                } else if (key === 'workDays') {
+                    acc['work_days'] = { hasEvery: data[key] };
+                } else if (key === 'workShift') {
+                    acc['work_shift'] = { hasEvery: data[key] };
                 }
             }
             return acc;
         }, {});
+
+        // console.log(data, filter);
 
         try {
             // find employees
