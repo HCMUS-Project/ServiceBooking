@@ -1,6 +1,6 @@
 import { Document } from 'mongoose';
 import { Profile } from './profile.interface';
-import {Role} from 'src/proto_build/auth/user_token_pb';
+import { Role } from 'src/proto_build/auth/user_token_pb';
 
 export interface User extends Document {
     readonly email: string;

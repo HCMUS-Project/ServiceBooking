@@ -2,6 +2,8 @@ import { PrismaService } from 'src/core/prisma/prisma.service';
 import {
     ICreateBookingRequest,
     ICreateBookingResponse,
+    IDeleteBookingRequest,
+    IDeleteBookingResponse,
     IFindOneRequest,
     IFindOneResponse,
     IFindSlotBookingsRequest,
@@ -49,7 +51,7 @@ export class BookingService {
     }
 
     checkAvailableSlotWithEmployee(time: Date, workShift: string[]): boolean {
-        const hours = time.getUTCHours(); 
+        const hours = time.getUTCHours();
         const shift =
             hours >= 6 && hours < 12
                 ? WorkShift.MORNING
@@ -92,6 +94,7 @@ export class BookingService {
 
             // get slot bookings with employee
             const daySlotBookings = this.convertDateToDay(dataFilter.date);
+
             // get employee
             const employees = await this.prismaService.employee.findMany({
                 where: {
@@ -122,12 +125,16 @@ export class BookingService {
                             lastName: emp.last_name,
                             email: emp.email,
                         }));
-                    
+
                     // check employee is booked
                     employeesForSlot = await Promise.all(
                         employeesForSlot.map(async emp => {
                             const count = await this.prismaService.booking.count({
-                                where: { employee_id: emp.id, start_time: slotBooking },
+                                where: {
+                                    employee_id: emp.id,
+                                    start_time: slotBooking,
+                                    status: { not: 'cancel' },
+                                },
                             });
                             return count == 0 ? emp : null;
                         }),
@@ -176,16 +183,22 @@ export class BookingService {
             // get slot bookings with employee
             const daySlotBookings = this.convertDateToDay(dataCreate.date);
 
-            // get employee of service in day
+            // get employee
             const employees = await this.prismaService.employee.findMany({
                 where: {
-                    work_days: { has: daySlotBookings },
-                    services: { some: { service_id: dataCreate.service } },
-                    Booking: {
-                        none: {
-                            start_time: new Date(dataCreate.startTime),
+                    AND: [
+                        {
+                            work_days: { has: daySlotBookings },
+                            services: { some: { service_id: dataCreate.service } },
+                            Booking: {
+                                none: {
+                                    start_time: new Date(dataCreate.startTime),
+                                },
+                            },
                         },
-                    },
+                        // if employee is none then no query with id
+                        dataCreate.employee ? { id: dataCreate.employee } : {},
+                    ],
                 },
                 select: {
                     id: true,
@@ -367,5 +380,36 @@ export class BookingService {
         }
     }
 
-    async deleteBooking() {}
+    async deleteBooking(data: IDeleteBookingRequest): Promise<IDeleteBookingResponse> {
+        const { user, note, id } = data;
+
+        // check user
+
+        try {
+            // check booking
+            const booking = await this.prismaService.booking.findUnique({
+                where: {
+                    id,
+                    user: user.email,
+                },
+            });
+
+            if (!booking) throw new GrpcItemNotFoundException('BOOKING_NOT_FOUND');
+
+            // update status booking
+            await this.prismaService.booking.update({
+                where: {
+                    id,
+                },
+                data: {
+                    status: 'cancel',
+                    note,
+                },
+            });
+        } catch (error) {
+            throw error;
+        }
+
+        return { result: 'success' };
+    }
 }
