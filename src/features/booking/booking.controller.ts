@@ -4,10 +4,13 @@ import { BookingService } from './booking.service';
 import {
     ICreateBookingRequest,
     ICreateBookingResponse,
+    IDeleteBookingRequest,
+    IDeleteBookingResponse,
     IFindOneRequest,
     IFindOneResponse,
     IFindSlotBookingsRequest,
     IFindSlotBookingsResponse,
+    IUpdateStatusBookingRequest,
 } from './interface/booking.interface';
 
 @Controller()
@@ -27,5 +30,15 @@ export class BookingController {
     @GrpcMethod('BookingService', 'FindOne')
     async findOne(data: IFindOneRequest): Promise<IFindOneResponse> {
         return await this.bookingService.findOne(data);
+    }
+
+    @GrpcMethod('BookingService', 'DeleteBooking')
+    async deleteBooking(data: IDeleteBookingRequest): Promise<IDeleteBookingResponse> {
+        return await this.bookingService.deleteBooking(data);
+    }
+
+    @GrpcMethod('BookingService', 'UpdateStatusBooking')
+    async updateStatusBooking(data: IUpdateStatusBookingRequest): Promise<IFindOneResponse> {
+        return await this.bookingService.updateStatusBooking(data);
     }
 }
