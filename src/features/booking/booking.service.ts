@@ -8,6 +8,7 @@ import {
     IFindOneResponse,
     IFindSlotBookingsRequest,
     IFindSlotBookingsResponse,
+    IUpdateStatusBookingRequest,
 } from './interface/booking.interface';
 import { WorkDays } from 'src/common/enums/workDays';
 import { ISlotBooking } from './interface/slot_booking.interface';
@@ -15,12 +16,20 @@ import { WorkShift } from 'src/common/enums/workShift';
 import { GrpcItemNotFoundException } from 'src/common/exceptions/exceptions';
 import { Injectable } from '@nestjs/common';
 import { convertTimeStringsToDateObjects } from 'src/util/time/TimeToDate';
+import { getEnumKeyByEnumValue } from 'src/util/convert_enum/get_key_enum';
+import { Role } from 'src/proto_build/auth/user_token_pb';
+import { StatusBooking } from 'src/common/enums/status_booking.enum';
+import { MailerService } from '@nestjs-modules/mailer';
+import { GrpcPermissionDeniedException } from 'nestjs-grpc-exceptions';
 
 const MINUTE_IN_MS = 60000;
 
 @Injectable()
 export class BookingService {
-    constructor(private prismaService: PrismaService) {}
+    constructor(
+        private prismaService: PrismaService,
+        private readonly mailerService: MailerService,
+    ) {}
 
     getAllSlotInDay(
         startTime: string,
@@ -60,13 +69,12 @@ export class BookingService {
                   : hours >= 18 && hours < 22
                     ? WorkShift.EVENING
                     : WorkShift.NIGHT;
-        // console.log(time, workShift, hours, shift)
         return workShift.includes(shift);
     }
 
     async findSlotBookings(data: IFindSlotBookingsRequest): Promise<IFindSlotBookingsResponse> {
         const { user, ...dataFilter } = data;
-        // console.log(dataFilter)
+
         try {
             // get service
             const service = await this.prismaService.services.findUnique({
@@ -84,8 +92,8 @@ export class BookingService {
 
             // get slot bookings
             const slotBookingsInDay = this.getAllSlotInDay(
-                service.time_service.start_time,
-                service.time_service.end_time,
+                dataFilter.startTime ? dataFilter.startTime : service.time_service.start_time,
+                dataFilter.endTime ? dataFilter.endTime : service.time_service.end_time,
                 service.time_service.break_start,
                 service.time_service.break_end,
                 service.time_service.duration,
@@ -112,6 +120,7 @@ export class BookingService {
                     },
                 },
             });
+
             // map slot bookings with employee
             let slotBookingsWithEmployee: ISlotBooking[] = await Promise.all(
                 slotBookingsInDay.map(async slotBooking => {
@@ -133,7 +142,7 @@ export class BookingService {
                                 where: {
                                     employee_id: emp.id,
                                     start_time: slotBooking,
-                                    status: { not: 'cancel' },
+                                    status: { not: StatusBooking.CANCEL },
                                 },
                             });
                             return count == 0 ? emp : null;
@@ -166,6 +175,11 @@ export class BookingService {
         try {
             const { user, ...dataCreate } = data;
 
+            // check role user
+            if (user.role.toString() === getEnumKeyByEnumValue(Role, Role.USER)) {
+                throw new GrpcPermissionDeniedException('PERMISSION_DENIED');
+            }
+
             // get service
             const service = await this.prismaService.services.findUnique({
                 where: {
@@ -193,6 +207,7 @@ export class BookingService {
                             Booking: {
                                 none: {
                                     start_time: new Date(dataCreate.startTime),
+                                    status: { not: StatusBooking.CANCEL },
                                 },
                             },
                         },
@@ -250,8 +265,7 @@ export class BookingService {
                         },
                     },
                     note: dataCreate.note,
-                    is_paid: false,
-                    status: 'padding',
+                    status: StatusBooking.PENDING,
                     user: user.email,
                 },
             });
@@ -276,7 +290,7 @@ export class BookingService {
                     start_time: true,
                     end_time: true,
                     note: true,
-                    is_paid: true,
+                    note_cancel: true,
                     status: true,
                     Employee: {
                         select: {
@@ -302,8 +316,8 @@ export class BookingService {
                 date: booking.start_time.toISOString(),
                 endTime: booking.end_time.toISOString(),
                 startTime: booking.start_time.toISOString(),
-                isPaid: booking.is_paid,
                 note: booking.note,
+                noteCancel: booking.note_cancel,
                 status: booking.status,
                 employee: {
                     id: booking.Employee.id,
@@ -333,8 +347,8 @@ export class BookingService {
                     start_time: true,
                     end_time: true,
                     note: true,
-                    is_paid: true,
                     status: true,
+                    note_cancel: true,
                     Employee: {
                         select: {
                             id: true,
@@ -361,7 +375,7 @@ export class BookingService {
                 date: booking.start_time.toISOString(),
                 endTime: booking.end_time.toISOString(),
                 startTime: booking.start_time.toISOString(),
-                isPaid: booking.is_paid,
+                noteCancel: booking.note_cancel,
                 note: booking.note,
                 status: booking.status,
                 employee: {
@@ -380,32 +394,150 @@ export class BookingService {
         }
     }
 
-    async deleteBooking(data: IDeleteBookingRequest): Promise<IDeleteBookingResponse> {
-        const { user, note, id } = data;
+    async updateStatusBooking(data: IUpdateStatusBookingRequest): Promise<IFindOneResponse> {
+        const { user, status, id } = data;
 
-        // check user
+        if (user.role.toString() === getEnumKeyByEnumValue(Role, Role.TENANT)) {
+            throw new GrpcPermissionDeniedException('PERMISSION_DENIED');
+        }
 
         try {
-            // check booking
-            const booking = await this.prismaService.booking.findUnique({
+            // check booking exist
+            const bookingExist = await this.prismaService.booking.findFirst({
                 where: {
                     id,
-                    user: user.email,
+                    Service: {
+                        domain: user.domain,
+                    },
+                },
+                select: { status: true },
+            });
+            if (!bookingExist) throw new GrpcItemNotFoundException('BOOKING_NOT_FOUND');
+
+            // check status booking
+            if (bookingExist.status.toUpperCase() !== StatusBooking.PENDING)
+                throw new GrpcPermissionDeniedException('BOOKING_CANNOT_UPDATE_STATUS');
+
+            // update status booking
+            const bookingUpdate = await this.prismaService.booking.update({
+                where: {
+                    id,
+                    Service: {
+                        domain: user.domain,
+                    },
+                },
+                data: {
+                    status: status.toUpperCase(),
+                },
+                select: {
+                    id: true,
+                    start_time: true,
+                    end_time: true,
+                    note: true,
+                    status: true,
+                    note_cancel: true,
+                    Employee: {
+                        select: {
+                            id: true,
+                            first_name: true,
+                            last_name: true,
+                            email: true,
+                        },
+                    },
+                    Service: {
+                        select: {
+                            id: true,
+                            name: true,
+                        },
+                    },
+                    user: true,
                 },
             });
 
+            return {
+                user: bookingUpdate.user,
+                id: bookingUpdate.id,
+                date: bookingUpdate.start_time.toISOString(),
+                endTime: bookingUpdate.end_time.toISOString(),
+                startTime: bookingUpdate.start_time.toISOString(),
+                noteCancel: bookingUpdate.note_cancel,
+                note: bookingUpdate.note,
+                status: bookingUpdate.status,
+                employee: {
+                    id: bookingUpdate.Employee.id,
+                    firstName: bookingUpdate.Employee.first_name,
+                    lastName: bookingUpdate.Employee.last_name,
+                    email: bookingUpdate.Employee.email,
+                },
+                service: {
+                    id: bookingUpdate.Service.id,
+                    name: bookingUpdate.Service.name,
+                },
+            };
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async deleteBooking(data: IDeleteBookingRequest): Promise<IDeleteBookingResponse> {
+        const { user, note, id } = data;
+
+        try {
+            // check booking
+            const booking = await this.prismaService.booking.findFirst({
+                where: {
+                    AND: [
+                        {
+                            id,
+                            Service: {
+                                domain: user.domain,
+                            },
+                        },
+                        user.role.toString() !== getEnumKeyByEnumValue(Role, Role.TENANT)
+                            ? { user: user.email }
+                            : {},
+                    ],
+                },
+                select: { status: true },
+            });
+
             if (!booking) throw new GrpcItemNotFoundException('BOOKING_NOT_FOUND');
+            if (booking.status !== StatusBooking.PENDING)
+                throw new GrpcPermissionDeniedException('BOOKING_CANNOT_DELETE');
 
             // update status booking
-            await this.prismaService.booking.update({
+            const bookingDeleted = await this.prismaService.booking.update({
                 where: {
                     id,
                 },
                 data: {
-                    status: 'cancel',
-                    note,
+                    status: StatusBooking.CANCEL,
+                    note_cancel: note,
+                },
+                select: {
+                    id: true,
+                    start_time: true,
+                    note: true,
+                    status: true,
+                    created_at: true,
+                    Service: {
+                        select: {
+                            id: true,
+                            name: true,
+                        },
+                    },
                 },
             });
+
+            // send email to user if booking is canceled by tenant
+            if (user.role.toString() === getEnumKeyByEnumValue(Role, Role.TENANT)) {
+                console.log('send email to user');
+                await this.mailerService.sendMail({
+                    to: user.email,
+                    subject: 'Booking Canceled',
+                    text: `Your booking with service ${bookingDeleted.Service.name} at ${bookingDeleted.start_time.toISOString()} is canceled.\nBecause ${note}`,
+                });
+            }
         } catch (error) {
             throw error;
         }
