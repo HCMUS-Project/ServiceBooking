@@ -27,8 +27,8 @@ model Booking {
     updated_at DateTime  @updatedAt
     deleted_at DateTime?
 
-    Service  Services @relation(fields: [service_id], references: [id])
-    Employee Employee @relation(fields: [employee_id], references: [id])
+    Service  Services @relation(fields: [service_id], references: [id], onDelete: Cascade)
+    Employee Employee @relation(fields: [employee_id], references: [id], onDelete: Cascade)
 }
 model Employee {
     id         String @id @default(uuid())
@@ -47,8 +47,8 @@ model Employee {
 model EmployeeService {
     employee_id String
     service_id  String
-    employee    Employee @relation(fields: [employee_id], references: [id])
-    service     Services @relation(fields: [service_id], references: [id])
+    employee    Employee @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+    service     Services @relation(fields: [service_id], references: [id], onDelete: Cascade)
 
     @@id([employee_id, service_id])
 }
@@ -63,7 +63,7 @@ model Review {
     updated_at  DateTime @updatedAt
 
     // Define relationships
-    Service Services @relation(fields: [service_id], references: [id])
+    Service Services @relation(fields: [service_id], references: [id], onDelete: Cascade)
 }
 model Services {
     id           String            @id @default(uuid())
@@ -92,7 +92,7 @@ model ServiceTime {
     break_end   String
 
     // relation one-to-one with Services
-    service    Services @relation(fields: [service_id], references: [id])
+    service    Services @relation(fields: [service_id], references: [id], onDelete: Cascade)
     service_id String   @unique
 
     created_at DateTime  @default(now())
@@ -112,5 +112,5 @@ model Voucher {
     updated_at         DateTime @updatedAt
     created_at         DateTime @default(now())
 
-    Service Services @relation(fields: [service_id], references: [id])
+    Service Services @relation(fields: [service_id], references: [id], onDelete: Cascade)
 }

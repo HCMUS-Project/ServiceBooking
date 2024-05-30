@@ -11,5 +11,5 @@ model Voucher {
     updated_at         DateTime @updatedAt
     created_at         DateTime @default(now())
 
-    Service Services @relation(fields: [service_id], references: [id])
+    Service Services @relation(fields: [service_id], references: [id], onDelete: Cascade)
 }

@@ -1,8 +1,8 @@
 model EmployeeService {
     employee_id String
     service_id  String
-    employee    Employee @relation(fields: [employee_id], references: [id])
-    service     Services @relation(fields: [service_id], references: [id])
+    employee    Employee @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+    service     Services @relation(fields: [service_id], references: [id], onDelete: Cascade)
 
     @@id([employee_id, service_id])
 }

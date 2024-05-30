@@ -34,6 +34,14 @@ export class VoucherService {
         // console.log(user.role);
 
         try {
+            // check if serviceId exists in the service table
+            const service = await this.prismaService.services.findUnique({
+                where: { id: voucher.serviceId },
+            });
+
+            if (!service) {
+                throw new GrpcItemNotFoundException('SERVICE_NOT_FOUND');
+            }
             // check voucher is exist
             if (
                 (await this.prismaService.voucher.count({
@@ -107,7 +115,7 @@ export class VoucherService {
 
             // check service is exist
             if (!voucher) {
-                throw new GrpcItemNotFoundException('VOUCHER_NOT_EXIST');
+                throw new GrpcItemNotFoundException('VOUCHER_NOT_FOUND');
             }
 
             // console.log(service);
@@ -149,20 +157,45 @@ export class VoucherService {
 
             // If the category does not exist, throw an error
             if (!voucher) {
-                throw new GrpcItemNotFoundException('CATEGORY_NOT_FOUND');
+                throw new GrpcItemNotFoundException('VOUCHER_NOT_FOUND');
+            }
+
+            // Create an object that includes only the fields that are not undefined
+            const updateData: Partial<typeof dataUpdate> = {};
+            for (const key in dataUpdate) {
+                if (dataUpdate[key] !== undefined) {
+                    // Map the field names in dataUpdate to the corresponding field names in the database
+                    let dbKey: string;
+                    switch (key) {
+                        case 'voucherName':
+                            dbKey = 'voucher_name';
+                            break;
+                        case 'voucherCode':
+                            dbKey = 'voucher_code';
+                            break;
+                        case 'maxDiscountValue':
+                            dbKey = 'max_discount_value';
+                            break;
+                        case 'minAppValue':
+                            dbKey = 'min_app_value';
+                            break;
+                        case 'discountPercent':
+                            dbKey = 'discount_percent';
+                            break;
+                        case 'expiredTime':
+                            dbKey = 'expired_time';
+                            break;
+                        default:
+                            dbKey = key;
+                    }
+                    updateData[dbKey] = dataUpdate[key];
+                }
             }
 
             // If the category exists, perform the update
             const updatedVoucher = await this.prismaService.voucher.update({
                 where: { id: dataUpdate.id },
-                data: {
-                    voucher_name: dataUpdate.voucherName,
-                    voucher_code: dataUpdate.voucherCode,
-                    max_discount_value: dataUpdate.maxDiscountValue,
-                    min_app_value: dataUpdate.minAppValue,
-                    discount_percent: dataUpdate.discountPercent,
-                    expired_time: new Date(dataUpdate.expiredTime),
-                },
+                data: updateData,
             });
             // console.log(updatedVoucher)
             return {
@@ -186,7 +219,7 @@ export class VoucherService {
                     where: { id },
                 })) == 0
             )
-                throw new GrpcItemNotFoundException('voucher_NOT_EXIST');
+                throw new GrpcItemNotFoundException('VOUCHER_NOT_EXIST');
 
             // delete service;
             // await this.prismaService.voucher.delete({

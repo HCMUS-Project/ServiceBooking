@@ -38,14 +38,12 @@ export class BookingService {
         const end = convertTimeStringsToDateObjects(endTime, new Date(date));
         const breakStartObj = convertTimeStringsToDateObjects(breakStart, new Date(date));
         const breakEndObj = convertTimeStringsToDateObjects(breakEnd, new Date(date));
-
         while (start < end) {
             if (start < breakStartObj || start >= breakEndObj) {
                 slots.push(start);
                 start = new Date(start.getTime() + slotDuration * MINUTE_IN_MS);
             } else start = breakEndObj;
         }
-
         return slots;
     }
 
@@ -56,7 +54,7 @@ export class BookingService {
     }
 
     checkAvailableSlotWithEmployee(time: Date, workShift: string[]): boolean {
-        const hours = time.getHours();
+        const hours = time.getUTCHours(); 
         const shift =
             hours >= 6 && hours < 12
                 ? WorkShift.MORNING
@@ -65,13 +63,13 @@ export class BookingService {
                   : hours >= 18 && hours < 22
                     ? WorkShift.EVENING
                     : WorkShift.NIGHT;
-
+        // console.log(time, workShift, hours, shift)
         return workShift.includes(shift);
     }
 
     async findSlotBookings(data: IFindSlotBookingsRequest): Promise<IFindSlotBookingsResponse> {
         const { user, ...dataFilter } = data;
-
+        // console.log(dataFilter)
         try {
             // get service
             const service = await this.prismaService.services.findUnique({
@@ -99,7 +97,6 @@ export class BookingService {
 
             // get slot bookings with employee
             const daySlotBookings = this.convertDateToDay(dataFilter.date);
-
             // get employee
             const employees = await this.prismaService.employee.findMany({
                 where: {
@@ -117,7 +114,6 @@ export class BookingService {
                     },
                 },
             });
-
             // map slot bookings with employee
             let slotBookingsWithEmployee: ISlotBooking[] = await Promise.all(
                 slotBookingsInDay.map(async slotBooking => {
@@ -131,7 +127,7 @@ export class BookingService {
                             lastName: emp.last_name,
                             email: emp.email,
                         }));
-
+                    
                     // check employee is booked
                     employeesForSlot = await Promise.all(
                         employeesForSlot.map(async emp => {
@@ -148,7 +144,6 @@ export class BookingService {
 
                     // Filter out null values
                     employeesForSlot = employeesForSlot.filter(emp => emp !== null);
-
                     return {
                         date: dataFilter.date,
                         startTime: slotBooking.toISOString(),

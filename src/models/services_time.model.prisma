@@ -7,7 +7,7 @@ model ServiceTime {
     break_end   String
 
     // relation one-to-one with Services
-    service    Services @relation(fields: [service_id], references: [id])
+    service    Services @relation(fields: [service_id], references: [id], onDelete: Cascade)
     service_id String   @unique
 
     created_at DateTime  @default(now())
