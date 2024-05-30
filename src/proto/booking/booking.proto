@@ -10,7 +10,7 @@ service BookingService {
     rpc FindOne(FindOneRequest) returns (FindOneResponse);
     rpc FindSlotBookings(FindSlotBookingsRequest) returns (FindSlotBookingsResponse);
     // rpc UpdateBooking(UpdateBookingRequest) returns (UpdateBookingResponse);
-    // rpc DeleteBooking(DeleteBookingRequest) returns (DeleteBookingResponse);
+    rpc DeleteBooking(DeleteBookingRequest) returns (DeleteBookingResponse);
 }
 
 message Emp{
@@ -75,4 +75,14 @@ message FindOneResponse{
     string user = 8;
     Emp employee = 9;
     Service service = 10;
+}
+
+message DeleteBookingRequest{
+    string id = 1;
+    string note = 2;
+    userToken.User user = 3;
+}
+
+message DeleteBookingResponse{
+    string result = 1;
 }

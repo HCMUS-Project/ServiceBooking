@@ -2,6 +2,8 @@ import { PrismaService } from 'src/core/prisma/prisma.service';
 import {
     ICreateBookingRequest,
     ICreateBookingResponse,
+    IDeleteBookingRequest,
+    IDeleteBookingResponse,
     IFindOneRequest,
     IFindOneResponse,
     IFindSlotBookingsRequest,
@@ -13,6 +15,9 @@ import { WorkShift } from 'src/common/enums/workShift';
 import { GrpcItemNotFoundException } from 'src/common/exceptions/exceptions';
 import { Injectable } from '@nestjs/common';
 import { convertTimeStringsToDateObjects } from 'src/util/time/TimeToDate';
+import { getEnumKeyByEnumValue } from 'src/util/convert_enum/get_key_enum';
+import { GrpcPermissionDeniedException } from 'nestjs-grpc-exceptions';
+import { Role } from 'src/proto_build/auth/user_token_pb';
 
 const MINUTE_IN_MS = 60000;
 
@@ -131,7 +136,11 @@ export class BookingService {
                     employeesForSlot = await Promise.all(
                         employeesForSlot.map(async emp => {
                             const count = await this.prismaService.booking.count({
-                                where: { employee_id: emp.id, start_time: slotBooking },
+                                where: {
+                                    employee_id: emp.id,
+                                    start_time: slotBooking,
+                                    status: { not: 'cancel' },
+                                },
                             });
                             return count == 0 ? emp : null;
                         }),
@@ -372,5 +381,34 @@ export class BookingService {
         }
     }
 
-    async deleteBooking() {}
+    async deleteBooking(data: IDeleteBookingRequest): Promise<IDeleteBookingResponse> {
+        const { user, note, id } = data;
+
+        // check user
+
+        try {
+            // check booking
+            const booking = await this.prismaService.booking.findUnique({
+                where: {
+                    id,
+                    user: user.email,
+                },
+            });
+
+            if (!booking) throw new GrpcItemNotFoundException('BOOKING_NOT_FOUND');
+
+            // update status booking
+            await this.prismaService.booking.update({
+                where: {
+                    id,
+                },
+                data: {
+                    status: 'cancel',
+                    note,
+                },
+            });
+        } catch (error) {
+            throw error;
+        }
+    }
 }
