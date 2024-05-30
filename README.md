@@ -26,7 +26,7 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.<br>
 
-[gRPC](https://docs.nestjs.com/microservices/grpc) config for service ecommerce.
+[gRPC](https://docs.nestjs.com/microservices/grpc) config for service booking.
 
 # Installation
 
