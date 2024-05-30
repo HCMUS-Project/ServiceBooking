@@ -10,7 +10,7 @@ import { ResponseInterceptor } from './core/response/response.interceptor';
 import { CacheModule } from './core/cache/modules/cache.module';
 import { PrismaModule } from './core/prisma/prisma.module';
 import { FeaturesModule } from './features/index.module';
-import {DatabaseModule} from './core/database/modules/database.module';
+import { DatabaseModule } from './core/database/modules/database.module';
 
 @Module({
     imports: [

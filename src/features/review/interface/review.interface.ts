@@ -26,8 +26,8 @@ export interface IFindAllReviewsResponse
     reviews: FindAllReviewsResponse.AsObject[];
 }
 
-export interface IEditReviewRequest extends EditReviewRequest.AsObject{}
-export interface IEditReviewResponse extends EditReviewResponse.AsObject{}
+export interface IEditReviewRequest extends EditReviewRequest.AsObject {}
+export interface IEditReviewResponse extends EditReviewResponse.AsObject {}
 
-export interface IDeleteReviewRequest extends DeleteReviewRequest.AsObject{}
-export interface IDeleteReviewResponse extends DeleteReviewResponse.AsObject{}
+export interface IDeleteReviewRequest extends DeleteReviewRequest.AsObject {}
+export interface IDeleteReviewResponse extends DeleteReviewResponse.AsObject {}

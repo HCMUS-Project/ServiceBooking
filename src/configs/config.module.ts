@@ -17,7 +17,7 @@ import mongoConfig from './database/mongo/mongo.config';
         NestConfigModule.forRoot({
             envFilePath: ['.env'],
             isGlobal: true,
-            load: [appConfig, mongoConfig,dataBaseConfig, nodeMailerConfig, supabaseConfig],
+            load: [appConfig, mongoConfig, dataBaseConfig, nodeMailerConfig, supabaseConfig],
         }),
     ],
     controllers: [],
