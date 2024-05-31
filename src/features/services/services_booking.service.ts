@@ -86,11 +86,11 @@ export class ServicesBookingService {
         }
     }
 
-    async findOne(user: IUserToken, id: string): Promise<IFindOneResponse> {
+    async findOne(domain: string, id: string): Promise<IFindOneResponse> {
         try {
             // find service by id
             const service = await this.prismaService.services.findUnique({
-                where: { id, domain: user.domain },
+                where: { id, domain: domain },
                 include: { time_service: true },
             });
 
@@ -138,7 +138,7 @@ export class ServicesBookingService {
     }
 
     async find(data: IFindServiceRequest): Promise<IFindServiceResponse> {
-        const { user, ...dataFilter } = data;
+        const { domain, ...dataFilter } = data;
 
         // check filter data
         if (
@@ -150,7 +150,7 @@ export class ServicesBookingService {
         }
 
         // get filter data
-        const filter = this.createFilter(dataFilter, user.domain);
+        const filter = this.createFilter(dataFilter, domain);
         try {
             // find all services
             const services = await this.prismaService.services.findMany({

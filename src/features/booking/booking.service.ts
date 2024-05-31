@@ -176,7 +176,7 @@ export class BookingService {
             const { user, ...dataCreate } = data;
 
             // check role user
-            if (user.role.toString() === getEnumKeyByEnumValue(Role, Role.USER)) {
+            if (user.role.toString() !== getEnumKeyByEnumValue(Role, Role.USER)) {
                 throw new GrpcPermissionDeniedException('PERMISSION_DENIED');
             }
 
@@ -526,6 +526,7 @@ export class BookingService {
                             name: true,
                         },
                     },
+                    user: true
                 },
             });
 
@@ -533,7 +534,7 @@ export class BookingService {
             if (user.role.toString() === getEnumKeyByEnumValue(Role, Role.TENANT)) {
                 console.log('send email to user');
                 await this.mailerService.sendMail({
-                    to: user.email,
+                    to: bookingDeleted.user,
                     subject: 'Booking Canceled',
                     text: `Your booking with service ${bookingDeleted.Service.name} at ${bookingDeleted.start_time.toISOString()} is canceled.\nBecause ${note}`,
                 });

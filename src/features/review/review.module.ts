@@ -9,18 +9,6 @@ import { ProfileUserSchema } from 'src/models/user_mongo/user/schema/profile.sch
 @Module({
     imports: [PrismaModule],
     controllers: [ReviewController],
-    providers: [
-        ReviewService,
-        {
-            provide: 'USER_MODEL',
-            useFactory: (mongoose: Mongoose) => mongoose.model('user', UserSchema),
-            inject: ['DATABASE_CONNECTION'],
-        },
-        {
-            provide: 'PROFILE_MODEL',
-            useFactory: (mongoose: Mongoose) => mongoose.model('profile', ProfileUserSchema),
-            inject: ['DATABASE_CONNECTION'],
-        },
-    ],
+    providers: [ReviewService],
 })
 export class ReviewModule {}

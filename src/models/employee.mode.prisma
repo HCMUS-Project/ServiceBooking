@@ -3,6 +3,8 @@ model Employee {
     first_name String
     last_name  String
     email      String
+    phone      String @default("")
+    image      String @default("")
     work_days  String[]
     work_shift String[]
     services   EmployeeService[]

@@ -35,6 +35,8 @@ model Employee {
     first_name String
     last_name  String
     email      String
+    phone      String @default("")
+    image      String @default("")
     work_days  String[]
     work_shift String[]
     services   EmployeeService[]
@@ -53,19 +55,21 @@ model EmployeeService {
     @@id([employee_id, service_id])
 }
 model Review {
-    id          String   @id @default(uuid())
-    type        String   @default("booking")
-    service_id  String // Foreign key referencing the service this review is for
-    user_id     String // ID of the user who created the review
-    description String
-    rating      Float // Assuming rating can be a decimal number
-    created_at  DateTime @default(now())
-    updated_at  DateTime @updatedAt
+    id         String  @id @default(uuid())
+    type       String  @default("booking")
+    service_id String // Foreign key referencing the service this review is for
+    user       String // ID of the user who created the review
+    rating     Decimal @commerce_db.Decimal(19, 1)
+    review     String
+
+    created_at DateTime  @default(now())
+    updated_at DateTime  @updatedAt
+    deleted_at DateTime?
 
     // Define relationships
     Service Services @relation(fields: [service_id], references: [id], onDelete: Cascade)
 }
-model Services {
+ model Services {
     id           String            @id @default(uuid())
     name         String            @unique
     description  String

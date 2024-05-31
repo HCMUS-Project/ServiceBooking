@@ -1,199 +1,230 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/core/prisma/prisma.service';
 import {
     ICreateReviewRequest,
     ICreateReviewResponse,
+    IDeleteReviewRequest,
     IDeleteReviewResponse,
-    IEditReviewRequest,
-    IEditReviewResponse,
+    IFindAllReviewsRequest,
     IFindAllReviewsResponse,
-    IFindOneReviewRequest,
-    IFindOneReviewResponse,
-    IReview,
+    IUpdateReviewRequest,
+    IUpdateReviewResponse,
 } from './interface/review.interface';
-import {
-    ICreateVoucherRequest,
-    IFindOneVoucherRequest,
-} from '../voucher/interface/voucher.interface';
 import { getEnumKeyByEnumValue } from 'src/util/convert_enum/get_key_enum';
 import { Role } from 'src/proto_build/auth/user_token_pb';
 import {
+    GrpcInvalidArgumentException,
     GrpcPermissionDeniedException,
-    GrpcUnauthenticatedException,
 } from 'nestjs-grpc-exceptions';
-import mongoose, { Model } from 'mongoose';
-import { User } from 'src/models/user_mongo/user/interface/user.interface';
-import { Profile } from 'src/models/user_mongo/user/interface/profile.interface';
-import { GrpcItemNotFoundException } from 'src/common/exceptions/exceptions';
 
 @Injectable()
 export class ReviewService {
-    constructor(
-        private prismaService: PrismaService,
-        @Inject('USER_MODEL') private readonly User: Model<User>,
-        @Inject('PROFILE_MODEL') private readonly Profile: Model<Profile>,
-    ) {}
+    constructor(private prismaService: PrismaService) {}
 
-    async create(data: ICreateReviewRequest): Promise<ICreateReviewResponse> {
-        const { user, ...review } = data;
-        // console.log(data)
+    async create(dataRequest: ICreateReviewRequest): Promise<ICreateReviewResponse> {
+        const { user, ...dataCreate } = dataRequest;
 
         // check role of user
+        if (user.role.toString() === getEnumKeyByEnumValue(Role, Role.ADMIN)) {
+            throw new GrpcPermissionDeniedException('PERMISSION_DENIED');
+        }
+
+        try {
+            // Check if user has purchased the product
+            if (
+                user.role.toString() === getEnumKeyByEnumValue(Role, Role.USER) &&
+                !(await this.checkUserPurchase(user.email, dataCreate.serviceId))
+            ) {
+                throw new GrpcInvalidArgumentException('USER_HAS_NOT_PURCHASED_SERVICE');
+            }
+
+            const reviewConditions = {
+                service_id: dataCreate.serviceId,
+                user: user.email,
+            };
+
+            const reviewExists = await this.prismaService.review.findFirst({
+                where: reviewConditions,
+            });
+
+            let review = null;
+            // Check if review exists then update review else create review
+            if (reviewExists !== null) {
+                // Update review
+                review = await this.prismaService.review.update({
+                    where: {
+                        id: reviewExists.id,
+                    },
+                    data: {
+                        rating: dataCreate.rating,
+                        review: dataCreate.review,
+                    },
+                });
+            } else {
+                // Create review
+                review = await this.prismaService.review.create({
+                    data: {
+                        ...reviewConditions,
+                        rating: dataCreate.rating,
+                        review: dataCreate.review,
+                    },
+                });
+            }
+
+            return {
+                review: {
+                    ...review,
+                    serviceId: review.service_id,
+                    createdAt: review.created_at.toISOString(),
+                    updatedAt: review.updated_at.toISOString(),
+                },
+            };
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async checkUserPurchase(user: string, serviceId: string) {
+        try {
+            // Check if user has purchased the product
+            const bookingDone = await this.prismaService.booking.findFirst({
+                where: {
+                    user: user,
+                    service_id: serviceId,
+                    status: 'SUCCESS',
+                },
+            });
+            return bookingDone !== null;
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async findAll(data: IFindAllReviewsRequest): Promise<IFindAllReviewsResponse> {
+        const page = data.page | 1;
+        const pageSize = data.pageSize | 10;
+
+        try {
+            let servicesIds: string[];
+            if (data.serviceId === undefined) {
+                servicesIds = (
+                    await this.prismaService.services.findMany({
+                        where: { domain: data.domain },
+                        select: {
+                            id: true,
+                        },
+                    })
+                ).map(service => service.id);
+            } else {
+                servicesIds = [data.serviceId];
+            }
+            // console.log(servicesIds);
+            const reviews = await this.prismaService.review.findMany({
+                where: {
+                    service_id: {
+                        in: servicesIds,
+                    },
+                },
+                orderBy: { created_at: 'desc' },
+                take: pageSize,
+                skip: (page - 1) * pageSize,
+            });
+
+            const total = await this.prismaService.review.count({
+                where: {
+                    service_id: data.serviceId,
+                },
+            });
+
+            const totalPages = Math.ceil(total / pageSize);
+
+            return {
+                reviews: reviews.map(review => {
+                    return {
+                        id: review.id,
+                        type: review.type,
+                        serviceId: review.service_id,
+                        user: review.user,
+                        rating: Number(review.rating),
+                        review: review.review,
+                        createdAt: review.created_at.toISOString(),
+                        updatedAt: review.updated_at.toISOString(),
+                    };
+                }),
+                totalPages: totalPages,
+                page: page,
+                pageSize: pageSize,
+            };
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async update(data: IUpdateReviewRequest): Promise<IUpdateReviewResponse> {
+        const { user, ...dataUpdate } = data;
+
         if (user.role.toString() !== getEnumKeyByEnumValue(Role, Role.USER)) {
             throw new GrpcPermissionDeniedException('PERMISSION_DENIED');
         }
 
-        // console.log(user.role);
-
         try {
-            // check user is exist
-            try {
-                const checkUser = await this.User.findOne({
-                    _id: new mongoose.Types.ObjectId(review.userId),
-                });
-                if (!checkUser) throw new GrpcItemNotFoundException('User_id');
-            } catch (e) {
-                throw new GrpcItemNotFoundException('User_id');
+            // check if review exists
+            if (
+                !(await this.prismaService.review.findFirst({
+                    where: { id: dataUpdate.id, user: user.email },
+                }))
+            ) {
+                throw new GrpcInvalidArgumentException('REVIEW_NOT_FOUND');
             }
 
-            // create voucher
-            const reviewNew = await this.prismaService.review.create({
-                data: {
-                    user_id: review.userId,
-                    service_id: review.serviceId,
-                    description: review.description,
-                    rating: review.rating,
-                },
-            });
-
-            // console.log(voucherNew);
-
-            return {
-                id: reviewNew.id,
-            };
-        } catch (error) {
-            throw error;
-        }
-    }
-
-    async findAll(role: Role): Promise<IFindAllReviewsResponse> {
-        try {
-            // find all categories by domain
-            // check role of user
-            // if (role.toString() !== getEnumKeyByEnumValue(Role, Role.TENANT)) {
-            //     throw new GrpcPermissionDeniedException('PERMISSION_DENIED');
-            // }
-            const reviews = await this.prismaService.review.findMany();
-            // console.log('abc')
-            return {
-                reviews: reviews.map(review => ({
-                    reviewsList: [],
-                    ...review,
-                    serviceId: review.service_id,
-                    userId: review.user_id,
-                    createdAt: review.created_at.toString(),
-                    updatedAt: review.updated_at.toString(),
-                })),
-            };
-        } catch (error) {
-            throw error;
-        }
-    }
-
-    async findOne(data: IFindOneReviewRequest): Promise<IFindOneReviewResponse> {
-        const { user, id } = data;
-        try {
-            // find review by id
-            const review = await this.prismaService.review.findUnique({
+            // check if user has purchased the product
+            const reviewUpdate = await this.prismaService.review.update({
                 where: {
-                    id,
+                    id: dataUpdate.id,
                 },
-            });
-
-            // check service is exist
-            if (!review) {
-                throw new GrpcItemNotFoundException('Review');
-            }
-
-            // console.log(service);
-
-            const reviewResult = {
-                ...review,
-                serviceId: review.service_id,
-                userId: review.user_id,
-                createdAt: review.created_at.toString(),
-                updatedAt: review.updated_at.toString(),
-            } as IReview;
-
-            return {
-                review: reviewResult,
-            };
-        } catch (error) {
-            throw error;
-        }
-    }
-
-    async update(data: IEditReviewRequest): Promise<IEditReviewResponse> {
-        const { user, ...dataUpdate } = data;
-        // check role of user
-        // if (user.role.toString() !== getEnumKeyByEnumValue(Role, Role.TENANT)) {
-        //     throw new GrpcPermissionDeniedException('PERMISSION_DENIED');
-        // }
-        try {
-            // Find the category first
-            const review = await this.prismaService.review.findUnique({
-                where: { id: dataUpdate.id },
-            });
-
-            // console.log(voucher)
-
-            // If the category does not exist, throw an error
-            if (!review) {
-                throw new GrpcItemNotFoundException('Review');
-            }
-
-            // If the category exists, perform the update
-            const updatedReview = await this.prismaService.review.update({
-                where: { id: dataUpdate.id },
                 data: {
-                    description: dataUpdate.description,
                     rating: dataUpdate.rating,
+                    review: dataUpdate.review,
                 },
             });
-            // console.log(updatedVoucher)
+
             return {
-                result: 'success edit review',
+                review: {
+                    ...reviewUpdate,
+                    createdAt: reviewUpdate.created_at.toISOString(),
+                    updatedAt: reviewUpdate.updated_at.toISOString(),
+                    serviceId: reviewUpdate.service_id,
+                    rating: Number(reviewUpdate.rating),
+                },
             };
         } catch (error) {
             throw error;
         }
     }
 
-    async remove(role: Role, id: string): Promise<IDeleteReviewResponse> {
-        // check role of user
-        if (role.toString() !== getEnumKeyByEnumValue(Role, Role.USER)) {
+    async remove(data: IDeleteReviewRequest): Promise<IDeleteReviewResponse> {
+        const { user, id } = data;
+        if (user.role.toString() !== getEnumKeyByEnumValue(Role, Role.USER)) {
             throw new GrpcPermissionDeniedException('PERMISSION_DENIED');
         }
 
         try {
-            // check voucher is exist
+            // check if review exists
             if (
-                (await this.prismaService.review.count({
-                    where: { id },
-                })) == 0
-            )
-                throw new GrpcItemNotFoundException('Review');
-
-            // delete service;
-            // await this.prismaService.voucher.delete({
-            //     where: { id: id },
-            // });
+                !(await this.prismaService.review.findFirst({
+                    where: { id: id, user: user.email },
+                }))
+            ) {
+                throw new GrpcInvalidArgumentException('REVIEW_NOT_FOUND');
+            }
 
             await this.prismaService.review.delete({
-                where: { id },
+                where: {
+                    id: id,
+                },
             });
 
-            return { result: 'success delete review' };
+            return { result: 'success' };
         } catch (error) {
             throw error;
         }

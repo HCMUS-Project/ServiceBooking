@@ -7,6 +7,6 @@ import { EmployeeController } from './employee.controller';
 @Module({
     imports: [PrismaModule],
     controllers: [EmployeeController],
-    providers: [EmployeeService],
+    providers: [EmployeeService, SupabaseService],
 })
 export class EmployeeModule {}

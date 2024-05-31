@@ -21,13 +21,18 @@ import { GrpcItemNotFoundException } from 'src/common/exceptions/exceptions';
 import { WorkShift } from 'src/common/enums/workShift';
 import { WorkDays } from 'src/common/enums/workDays';
 import { Injectable } from '@nestjs/common';
+import { SupabaseService } from 'src/util/supabase/supabase.service';
 
 @Injectable()
 export class EmployeeService {
-    constructor(private prismaService: PrismaService) {}
+    constructor(
+        private prismaService: PrismaService,
+        private supabaseService: SupabaseService,
+    ) {}
 
     async create(data: ICreateEmployeeRequest): Promise<ICreateEmployeeResponse> {
-        const { user, firstName, lastName, email, workDays, workShift, services } = data;
+        const { user, firstName, lastName, email, phone, image, workDays, workShift, services } =
+            data;
 
         // check role of user
         if (user.role.toString() !== getEnumKeyByEnumValue(Role, Role.TENANT))
@@ -65,12 +70,17 @@ export class EmployeeService {
             )
                 throw new GrpcItemNotFoundException('SERVICES_NOT_FOUND');
 
+            // create image link
+
             // create employee
+            const imageUrl = await this.supabaseService.uploadImageAndGetLink([image]);
             const employee = await this.prismaService.employee.create({
                 data: {
                     first_name: firstName,
                     last_name: lastName,
                     email,
+                    phone,
+                    image: imageUrl[0],
                     work_days: workDays,
                     work_shift: workShift,
                 },
@@ -118,6 +128,8 @@ export class EmployeeService {
                 firstName: employee.first_name,
                 lastName: employee.last_name,
                 email: employee.email,
+                phone: employee.phone,
+                image: employee.image,
                 workDays: employee.work_days,
                 workShift: employee.work_shift,
                 services: services,
@@ -128,6 +140,22 @@ export class EmployeeService {
     }
 
     async find(data: IFindEmployeeRequest): Promise<IFindEmployeeResponse> {
+        // initial services if services is undefined
+        // console.log(data)
+        if (data.services.length === 0) {
+            data['services'] = (
+                await this.prismaService.services.findMany({
+                    where: {
+                        domain: data.domain,
+                    },
+                    select: {
+                        id: true,
+                    },
+                })
+            ).map(service => service.id);
+            // console.log(data['services'])
+        }
+        // console.log(data)
         // filter data
         const filter = ['workDays', 'workShift', 'services', 'name'].reduce((acc, key) => {
             if (data[key]) {
@@ -156,6 +184,8 @@ export class EmployeeService {
                     first_name: true,
                     last_name: true,
                     email: true,
+                    phone: true,
+                    image: true,
                     work_days: true,
                     work_shift: true,
                     services: {
@@ -174,6 +204,8 @@ export class EmployeeService {
                         firstName: employee.first_name,
                         lastName: employee.last_name,
                         email: employee.email,
+                        phone: employee.phone,
+                        image: employee.image,
                         workDays: employee.work_days,
                         workShift: employee.work_shift,
                         services: services,
@@ -186,7 +218,18 @@ export class EmployeeService {
     }
 
     async update(data: IUpdateEmployeeRequest): Promise<IUpdateEmployeeResponse> {
-        const { user, id, firstName, lastName, email, workDays, workShift, services } = data;
+        const {
+            user,
+            id,
+            firstName,
+            lastName,
+            email,
+            phone,
+            image,
+            workDays,
+            workShift,
+            services,
+        } = data;
 
         // check role of user
         if (user.role.toString() !== getEnumKeyByEnumValue(Role, Role.TENANT))
@@ -228,18 +271,41 @@ export class EmployeeService {
             )
                 throw new GrpcItemNotFoundException('SERVICES_NOT_FOUND');
 
+            // create image link
+            // const imageUrl = await this.supabaseService.uploadImageAndGetLink([image]);
+
             // update employee
+            // await this.prismaService.employee.update({
+            //     where: { id },
+            //     data: {
+            //         first_name: firstName,
+            //         last_name: lastName,
+            //         phone: phone,
+            //         image: imageUrl[0],
+            //         email,
+            //         work_days: workDays,
+            //         work_shift: workShift,
+            //     },
+            // });
+            let updateData = {
+                first_name: firstName,
+                last_name: lastName,
+                email,
+                phone,
+                work_days: workDays.length > 0 ? workDays : undefined,
+                work_shift: workShift.length > 0 ? workShift : undefined,
+                image
+            };
+            
+            if (image !== undefined) {
+                const imageUrl = await this.supabaseService.uploadImageAndGetLink([image]);
+                updateData.image = imageUrl[0];
+            }
+            
             await this.prismaService.employee.update({
                 where: { id },
-                data: {
-                    first_name: firstName,
-                    last_name: lastName,
-                    email,
-                    work_days: workDays,
-                    work_shift: workShift,
-                },
+                data: updateData,
             });
-
             // delete all services of employee
             await this.prismaService.employeeService.deleteMany({
                 where: { employee_id: id },

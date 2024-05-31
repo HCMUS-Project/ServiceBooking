@@ -13,7 +13,7 @@ service ServicesService {
 }
 
 message FindServicesRequest {
-    userToken.User user = 1;
+    string domain = 1;
     optional float price_lower = 2;
     optional float price_higher = 3;
     optional string name = 4;
@@ -78,7 +78,7 @@ message UpdateServiceResponse {
 
 message FindOneRequest {
     string id = 1;
-    userToken.User user = 2;
+    string domain = 2;
 }
 
 message FindOneResponse {

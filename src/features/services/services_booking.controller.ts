@@ -25,7 +25,7 @@ export class ServicesBookingController {
 
     @GrpcMethod('ServicesService', 'FindOne')
     async findOne(data: IFindOneRequest): Promise<IFindOneResponse> {
-        return await this.servicesBookingService.findOne(data.user, data.id);
+        return await this.servicesBookingService.findOne(data.domain, data.id);
     }
 
     @GrpcMethod('ServicesService', 'FindServices')
