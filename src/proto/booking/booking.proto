@@ -53,6 +53,7 @@ message CreateBookingRequest{
     optional string employee = 4;
     string start_time = 5;
     string note = 6;
+    optional string voucher = 7;
 }
 
 message CreateBookingResponse{
@@ -75,6 +76,7 @@ message FindOneResponse{
     string user = 8;
     Emp employee = 9;
     Service service = 10;
+    float final_price = 11;
 }
 
 message DeleteBookingRequest{

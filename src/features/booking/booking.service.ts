@@ -194,6 +194,8 @@ export class BookingService {
             });
             if (!service) throw new GrpcItemNotFoundException('SERVICE_NOT_FOUND');
 
+            //TODO check voucher
+
             // get slot bookings with employee
             const daySlotBookings = this.convertDateToDay(dataCreate.date);
 
@@ -330,6 +332,8 @@ export class BookingService {
                     name: booking.Service.name,
                 },
                 user: data.user.email,
+                //TODO calculate total price
+                finalPrice: 300000,
             };
         } catch (error) {
             throw error;
@@ -388,6 +392,8 @@ export class BookingService {
                     id: booking.Service.id,
                     name: booking.Service.name,
                 },
+                // TODO calculate total price
+                finalPrice: 300000,
             };
         } catch (error) {
             throw error;
@@ -473,6 +479,8 @@ export class BookingService {
                     id: bookingUpdate.Service.id,
                     name: bookingUpdate.Service.name,
                 },
+                // TODO calculate total price
+                finalPrice: 300000,
             };
         } catch (error) {
             throw error;
@@ -526,7 +534,7 @@ export class BookingService {
                             name: true,
                         },
                     },
-                    user: true
+                    user: true,
                 },
             });
 
