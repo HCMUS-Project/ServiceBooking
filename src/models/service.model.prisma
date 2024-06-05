@@ -1,18 +1,19 @@
 model Services {
-    id           String            @id @default(uuid())
-    name         String            @unique
-    description  String
-    price        Float
-    rating       Float             @default(0)
-    views        Int               @default(0)
-    images       String[]          @default([])
-    time_service ServiceTime?
-    domain       String
-    created_at   DateTime          @default(now())
-    updated_at   DateTime          @updatedAt
-    deleted_at   DateTime?
-    Voucher      Voucher[]
-    Review       Review[]
-    employees    EmployeeService[]
-    Booking      Booking[]
+    id            String            @id @default(uuid())
+    name          String            @unique
+    description   String
+    price         Float
+    rating        Float             @default(0)
+    number_rating Int               @default(0)
+    views         Int               @default(0)
+    images        String[]          @default([])
+    time_service  ServiceTime?
+    domain        String
+    created_at    DateTime          @default(now())
+    updated_at    DateTime          @updatedAt
+    deleted_at    DateTime?
+    Voucher       Voucher[]
+    Review        Review[]
+    employees     EmployeeService[]
+    Booking       Booking[]
 }

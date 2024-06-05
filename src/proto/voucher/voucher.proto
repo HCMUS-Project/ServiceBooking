@@ -17,10 +17,10 @@ message CreateVoucherRequest {
     string service_id = 2;
     string voucher_name = 3;
     string voucher_code = 4;
-    float max_discount_value = 5;
+    float max_discount = 5;
     float min_app_value = 6;
     float discount_percent = 7;
-    string expired_time = 8; // Should be formatted as per DateTime format in your application
+    string expired_at = 8; // Should be formatted as per DateTime format in your application
 }
 
 message Voucher{
@@ -29,10 +29,10 @@ message Voucher{
     string service_id = 3;
     string voucher_name = 4;
     string voucher_code = 5;
-    float max_discount_value = 6;
+    float max_discount = 6;
     float min_app_value = 7;
     float discount_percent = 8;
-    string expired_time = 9;
+    string expired_at = 9;
     string created_at = 10;
 }
 
@@ -45,10 +45,10 @@ message EditVoucherRequest {
     string id = 2; // ID of the voucher to be edited
     string voucher_name = 3; // Updated voucher name (optional)
     string voucher_code = 4; // Updated voucher code (optional)
-    float max_discount_value = 5; // Updated max discount value (optional)
+    float max_discount = 5; // Updated max discount value (optional)
     float min_app_value = 6; // Updated min app value (optional)
     float discount_percent = 7; // Updated discount percent (optional)
-    string expired_time = 8; // Updated expiry time (optional)
+    string expired_at = 8; // Updated expiry time (optional)
 }
 
 message EditVoucherResponse {

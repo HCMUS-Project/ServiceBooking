@@ -2,10 +2,12 @@ model Booking {
     id          String   @id @default(uuid())
     user        String
     service_id  String
+    voucher_id  String  @default("")
     employee_id String
     start_time  DateTime
     end_time    DateTime
     note        String
+    total_price Decimal  @commerce_db.Decimal(19, 2) @default(0)
     status      String
     note_cancel String?
 

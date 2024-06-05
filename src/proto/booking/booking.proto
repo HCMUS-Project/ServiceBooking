@@ -11,12 +11,14 @@ service BookingService {
     rpc FindSlotBookings(FindSlotBookingsRequest) returns (FindSlotBookingsResponse);
     rpc UpdateStatusBooking(UpdateStatusBookingRequest) returns (FindOneResponse);
     rpc DeleteBooking(DeleteBookingRequest) returns (DeleteBookingResponse);
+    rpc FindAllBookingByTenant(FindAllBookingByTenantRequest) returns(FindAllBookingResponse);
+    rpc FindAllBookingByUser(FindAllBookingByUserRequest) returns(FindAllBookingResponse);
 }
 
 message Emp{
     string id = 1;
     string first_name = 2;
-    string last_name = 3;
+    string last_name = 3; 
     string email = 4;
 }
 
@@ -76,7 +78,8 @@ message FindOneResponse{
     string user = 8;
     Emp employee = 9;
     Service service = 10;
-    float final_price = 11;
+    float total_price = 11;
+    string voucher_id = 12;
 }
 
 message DeleteBookingRequest{
@@ -92,5 +95,21 @@ message DeleteBookingResponse{
 message UpdateStatusBookingRequest{
     string id = 1;
     string status = 2;
-    userToken.User user = 4;
+    userToken.User user = 3;
+}
+
+message FindAllBookingByTenantRequest{
+    userToken.User user = 1;
+    repeated string status = 2;
+    repeated string date = 3;
+    repeated string services = 4;
+}
+
+message FindAllBookingByUserRequest{
+    userToken.User user = 1;
+    repeated string status = 2;
+}
+
+message FindAllBookingResponse{
+    repeated FindOneResponse bookings = 1;
 }

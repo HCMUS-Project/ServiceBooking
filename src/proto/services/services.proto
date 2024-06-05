@@ -47,10 +47,11 @@ message CreateServiceResponse {
     float price = 4;
     float rating = 5;
     int32 views = 6;
-    string domain = 7;
-    ServiceTime time_service = 8;
-    int64 created_at = 9;
-    repeated string images = 10;
+    int32 number_rating = 7;
+    string domain = 8;
+    ServiceTime time_service = 9;
+    int64 created_at = 10;
+    repeated string images = 11;
 }
 
 message UpdateServiceRequest {
@@ -70,10 +71,11 @@ message UpdateServiceResponse {
     float price = 4;
     float rating = 5;
     int32 views = 6;
-    string domain = 7;
-    ServiceTime time_service = 8;
-    int64 created_at = 9;
-    repeated string images = 10;
+    int32 number_rating = 7;
+    string domain = 8;
+    ServiceTime time_service = 9;
+    int64 created_at = 10;
+    repeated string images = 11;
 }
 
 message FindOneRequest {
@@ -88,10 +90,11 @@ message FindOneResponse {
     float price = 4;
     float rating = 5;
     int32 views = 6;
-    string domain = 7;
-    ServiceTime time_service = 8;
-    int64 created_at = 9;
-    repeated string images = 10;
+    int32 number_rating = 7;
+    string domain = 8;
+    ServiceTime time_service = 9;
+    int64 created_at = 10;
+    repeated string images = 11;
 }
 
 message DeleteServiceRequest{
