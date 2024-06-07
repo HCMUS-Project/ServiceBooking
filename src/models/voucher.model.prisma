@@ -1,16 +1,17 @@
 model Voucher {
-    id                 String   @id @default(uuid())
-    type               String   @default("booking")
-    service_id         String // Foreign key referencing the service this voucher belongs to
-    voucher_name       String
-    voucher_code       String
-    max_discount       Float    @default(0)
-    min_app_value      Float
-    discount_percent   Float
-    expire_at          DateTime @default(now())
-    created_at         DateTime @default(now())
+    id               String   @id @default(uuid())
+    type             String   @default("booking")
+    service_id       String
+    voucher_name     String
+    voucher_code     String
+    max_discount     Float    @default(0)
+    min_app_value    Float
+    discount_percent Float
+    expire_at        DateTime @default(now())
+    created_at       DateTime @default(now())
 
-    updated_at         DateTime @updatedAt
+    updated_at DateTime @updatedAt
 
-    Service Services @relation(fields: [service_id], references: [id], onDelete: Cascade)
+    Service Services  @relation(fields: [service_id], references: [id], onDelete: Cascade)
+    Booking Booking[]
 }

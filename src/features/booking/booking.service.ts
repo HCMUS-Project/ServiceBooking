@@ -1,4 +1,3 @@
-import { PrismaService } from 'src/core/prisma/prisma.service';
 import {
     ICreateBookingRequest,
     ICreateBookingResponse,
@@ -21,6 +20,7 @@ import { Role } from 'src/proto_build/auth/user_token_pb';
 import { StatusBooking } from 'src/common/enums/status_booking.enum';
 import { MailerService } from '@nestjs-modules/mailer';
 import { GrpcPermissionDeniedException } from 'nestjs-grpc-exceptions';
+import { PrismaService } from 'src/core/prisma/prisma.service';
 
 const MINUTE_IN_MS = 60000;
 
@@ -31,7 +31,15 @@ export class BookingService {
         private readonly mailerService: MailerService,
     ) {}
 
-    getAllSlotInDay(
+    private calPrice(amount, discountPercent, maxDiscount, minAppValue) {
+        let discount = amount * (discountPercent / 100);
+        if (discount > maxDiscount) discount = maxDiscount;
+        if (discount > amount) discount = amount;
+        if (amount < minAppValue) discount = 0;
+        return amount - discount;
+    }
+
+    private getAllSlotInDay(
         startTime: string,
         endTime: string,
         breakStart: string,
@@ -53,13 +61,13 @@ export class BookingService {
         return slots;
     }
 
-    convertDateToDay(date: string): string {
+    private convertDateToDay(date: string): string {
         const dateObj = new Date(date);
 
         return (Object.values(WorkDays) as string[])[dateObj.getDay()];
     }
 
-    checkAvailableSlotWithEmployee(time: Date, workShift: string[]): boolean {
+    private checkAvailableSlotWithEmployee(time: Date, workShift: string[]): boolean {
         const hours = time.getUTCHours();
         const shift =
             hours >= 6 && hours < 12
@@ -190,11 +198,31 @@ export class BookingService {
                     id: true,
                     name: true,
                     time_service: true,
+                    price: true,
                 },
             });
             if (!service) throw new GrpcItemNotFoundException('SERVICE_NOT_FOUND');
 
-            //TODO check voucher
+            //check voucher
+            if (dataCreate.voucher) {
+                var voucherDiscount = await this.prismaService.voucher.findUnique({
+                    where: {
+                        id: dataCreate.voucher,
+                        Service: {
+                            id: dataCreate.service,
+                        },
+                    },
+                    select: {
+                        id: true,
+                        expire_at: true,
+                        discount_percent: true,
+                        max_discount: true,
+                        min_app_value: true,
+                    },
+                });
+                if (!voucherDiscount || voucherDiscount.expire_at < new Date())
+                    throw new GrpcItemNotFoundException('VOUCHER_NOT_FOUND');
+            }
 
             // get slot bookings with employee
             const daySlotBookings = this.convertDateToDay(dataCreate.date);
@@ -269,6 +297,15 @@ export class BookingService {
                     note: dataCreate.note,
                     status: StatusBooking.PENDING,
                     user: user.email,
+                    Voucher: voucherDiscount ? { connect: { id: dataCreate.voucher } } : {},
+                    total_price: voucherDiscount
+                        ? this.calPrice(
+                              service.price,
+                              voucherDiscount.discount_percent,
+                              voucherDiscount.max_discount,
+                              voucherDiscount.min_app_value,
+                          )
+                        : service.price,
                 },
             });
 
@@ -308,6 +345,8 @@ export class BookingService {
                             name: true,
                         },
                     },
+                    voucher_id: true,
+                    total_price: true,
                 },
             });
 
@@ -332,8 +371,7 @@ export class BookingService {
                     name: booking.Service.name,
                 },
                 user: data.user.email,
-                //TODO calculate total price
-                finalPrice: 300000,
+                finalPrice: booking.total_price.toNumber(),
             };
         } catch (error) {
             throw error;

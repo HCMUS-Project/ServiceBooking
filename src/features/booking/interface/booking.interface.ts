@@ -8,6 +8,7 @@ import {
     DeleteBookingRequest,
     DeleteBookingResponse,
     UpdateStatusBookingRequest,
+    FindAllBookingRequest,
 } from 'src/proto_build/booking/booking_pb';
 import { ISlotBooking } from './slot_booking.interface';
 
@@ -27,3 +28,5 @@ export interface IDeleteBookingRequest extends DeleteBookingRequest.AsObject {}
 export interface IDeleteBookingResponse extends DeleteBookingResponse.AsObject {}
 
 export interface IUpdateStatusBookingRequest extends UpdateStatusBookingRequest.AsObject {}
+
+export interface IFindAllRequest extends Omit<FindAllBookingRequest.AsObject, ''
