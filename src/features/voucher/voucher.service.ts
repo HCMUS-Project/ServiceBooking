@@ -57,10 +57,10 @@ export class VoucherService {
                     service_id: voucher.serviceId,
                     voucher_name: voucher.voucherName,
                     voucher_code: voucher.voucherCode,
-                    max_discount_value: voucher.maxDiscountValue,
+                    max_discount: voucher.maxDiscount,
                     min_app_value: voucher.minAppValue,
                     discount_percent: voucher.discountPercent,
-                    expired_time: new Date(voucher.expiredTime),
+                    expire_at: new Date(voucher.expiredAt),
                 },
             });
 
@@ -91,10 +91,10 @@ export class VoucherService {
                     serviceId: voucher.service_id,
                     voucherName: voucher.voucher_name,
                     voucherCode: voucher.voucher_code,
-                    maxDiscountValue: voucher.max_discount_value,
+                    maxDiscount: voucher.max_discount,
                     minAppValue: voucher.min_app_value,
                     discountPercent: voucher.discount_percent,
-                    expiredTime: voucher.expired_time.toString(),
+                    expiredAt: voucher.expire_at.toString(),
                     createdAt: voucher.created_at.toString(),
                 })),
             };
@@ -126,10 +126,10 @@ export class VoucherService {
                 serviceId: voucher.service_id,
                 voucherName: voucher.voucher_name,
                 voucherCode: voucher.voucher_code,
-                maxDiscountValue: voucher.max_discount_value,
+                maxDiscount: voucher.max_discount,
                 minAppValue: voucher.min_app_value,
                 discountPercent: voucher.discount_percent,
-                expiredTime: voucher.expired_time.toString(),
+                expiredAt: voucher.expire_at.toString(),
                 createdAt: voucher.created_at.toString(),
             } as IVoucher;
 

@@ -16,12 +16,12 @@ model Booking {
     id          String   @id @default(uuid())
     user        String
     service_id  String
-    voucher_id  String  @default("")
+    voucher_id  String?
     employee_id String
     start_time  DateTime
     end_time    DateTime
     note        String
-    total_price Decimal  @commerce_db.Decimal(19, 2) @default(0)
+    total_price Decimal  @default(0) @commerce_db.Decimal(19, 2)
     status      String
     note_cancel String?
 
@@ -31,6 +31,7 @@ model Booking {
 
     Service  Services @relation(fields: [service_id], references: [id], onDelete: Cascade)
     Employee Employee @relation(fields: [employee_id], references: [id], onDelete: Cascade)
+    Voucher  Voucher? @relation(fields: [voucher_id], references: [id])
 }
 model Employee {
     id         String @id @default(uuid())
@@ -107,18 +108,19 @@ model ServiceTime {
     deleted_at DateTime?
 }
 model Voucher {
-    id                 String   @id @default(uuid())
-    type               String   @default("booking")
-    service_id         String // Foreign key referencing the service this voucher belongs to
-    voucher_name       String
-    voucher_code       String
-    max_discount       Float    @default(0)
-    min_app_value      Float
-    discount_percent   Float
-    expire_at          DateTime @default(now())
-    created_at         DateTime @default(now())
+    id               String   @id @default(uuid())
+    type             String   @default("booking")
+    service_id       String
+    voucher_name     String
+    voucher_code     String
+    max_discount     Float    @default(0)
+    min_app_value    Float
+    discount_percent Float
+    expire_at        DateTime @default(now())
+    created_at       DateTime @default(now())
 
-    updated_at         DateTime @updatedAt
+    updated_at DateTime @updatedAt
 
-    Service Services @relation(fields: [service_id], references: [id], onDelete: Cascade)
+    Service Services  @relation(fields: [service_id], references: [id], onDelete: Cascade)
+    Booking Booking[]
 }

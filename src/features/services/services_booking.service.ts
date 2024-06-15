@@ -80,6 +80,7 @@ export class ServicesBookingService {
                 timeService: {
                     ...timeService,
                 },
+                numberRating: serviceNew.number_rating,
             };
         } catch (error) {
             throw error;
@@ -109,6 +110,7 @@ export class ServicesBookingService {
                     breakEnd: service.time_service.break_end,
                 },
                 createdAt: service.created_at.getTime(),
+                numberRating: service.number_rating
             };
         } catch (error) {
             throw error;
@@ -161,6 +163,7 @@ export class ServicesBookingService {
             return {
                 services: services.map(service => ({
                     ...service,
+                    numberRating: service.number_rating,
                     timeService: {
                         startTime: service.time_service.start_time,
                         endTime: service.time_service.end_time,
@@ -254,6 +257,7 @@ export class ServicesBookingService {
             return {
                 ...serviceNew,
                 createdAt: serviceNew.created_at.getTime(),
+                numberRating: serviceNew.number_rating,
                 timeService: {
                     ...timeService,
                 },

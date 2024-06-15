@@ -6,6 +6,8 @@ import {
     ICreateBookingResponse,
     IDeleteBookingRequest,
     IDeleteBookingResponse,
+    IFindAllBookingRequest,
+    IFindAllBookingResponse,
     IFindOneRequest,
     IFindOneResponse,
     IFindSlotBookingsRequest,
@@ -40,5 +42,10 @@ export class BookingController {
     @GrpcMethod('BookingService', 'UpdateStatusBooking')
     async updateStatusBooking(data: IUpdateStatusBookingRequest): Promise<IFindOneResponse> {
         return await this.bookingService.updateStatusBooking(data);
+    }
+
+    @GrpcMethod('BookingService', 'FindAllBooking')
+    async findAllBooking(data: IFindAllBookingRequest): Promise<IFindAllBookingResponse> {
+        return await this.bookingService.findAllBooking(data);
     }
 }
