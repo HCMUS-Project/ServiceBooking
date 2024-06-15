@@ -43,12 +43,12 @@ message CreateVoucherResponse {
 message EditVoucherRequest {
     userToken.User user = 1;
     string id = 2; // ID of the voucher to be edited
-    string voucher_name = 3; // Updated voucher name (optional)
-    string voucher_code = 4; // Updated voucher code (optional)
-    float max_discount = 5; // Updated max discount value (optional)
-    float min_app_value = 6; // Updated min app value (optional)
-    float discount_percent = 7; // Updated discount percent (optional)
-    string expired_at = 8; // Updated expiry time (optional)
+    optional string voucher_name = 3; // Updated voucher name (optional)
+    optional string voucher_code = 4; // Updated voucher code (optional)
+    optional float max_discount = 5; // Updated max discount value (optional)
+    optional float min_app_value = 6; // Updated min app value (optional)
+    optional float discount_percent = 7; // Updated discount percent (optional)
+    optional string expired_at = 8; // Updated expiry time (optional)
 }
 
 message EditVoucherResponse {

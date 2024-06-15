@@ -12,7 +12,6 @@ datasource commerce_db {
     provider = "postgresql"
     url      = env("POSTGRES_URI")
 }
-
 model Booking {
     id          String   @id @default(uuid())
     user        String
@@ -34,14 +33,13 @@ model Booking {
     Employee Employee @relation(fields: [employee_id], references: [id], onDelete: Cascade)
     Voucher  Voucher? @relation(fields: [voucher_id], references: [id])
 }
-
 model Employee {
-    id         String            @id @default(uuid())
+    id         String @id @default(uuid())
     first_name String
     last_name  String
     email      String
-    phone      String            @default("")
-    image      String            @default("")
+    phone      String @default("")
+    image      String @default("")
     work_days  String[]
     work_shift String[]
     services   EmployeeService[]
@@ -51,7 +49,6 @@ model Employee {
     deleted_at DateTime?
     Booking    Booking[]
 }
-
 model EmployeeService {
     employee_id String
     service_id  String
@@ -60,7 +57,6 @@ model EmployeeService {
 
     @@id([employee_id, service_id])
 }
-
 model Review {
     id         String  @id @default(uuid())
     type       String  @default("booking")
@@ -76,8 +72,7 @@ model Review {
     // Define relationships
     Service Services @relation(fields: [service_id], references: [id], onDelete: Cascade)
 }
-
-model Services {
+ model Services {
     id            String            @id @default(uuid())
     name          String            @unique
     description   String
@@ -96,7 +91,6 @@ model Services {
     employees     EmployeeService[]
     Booking       Booking[]
 }
-
 model ServiceTime {
     id          String @id @default(uuid())
     start_time  String
@@ -113,7 +107,6 @@ model ServiceTime {
     updated_at DateTime  @updatedAt
     deleted_at DateTime?
 }
-
 model Voucher {
     id               String   @id @default(uuid())
     type             String   @default("booking")

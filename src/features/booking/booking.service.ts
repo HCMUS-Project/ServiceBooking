@@ -3,6 +3,8 @@ import {
     ICreateBookingResponse,
     IDeleteBookingRequest,
     IDeleteBookingResponse,
+    IFindAllBookingRequest,
+    IFindAllBookingResponse,
     IFindOneRequest,
     IFindOneResponse,
     IFindSlotBookingsRequest,
@@ -32,7 +34,7 @@ export class BookingService {
     ) {}
 
     private calPrice(amount, discountPercent, maxDiscount, minAppValue) {
-        let discount = amount * (discountPercent / 100);
+        let discount = amount * discountPercent;
         if (discount > maxDiscount) discount = maxDiscount;
         if (discount > amount) discount = amount;
         if (amount < minAppValue) discount = 0;
@@ -52,6 +54,7 @@ export class BookingService {
         const end = convertTimeStringsToDateObjects(endTime, new Date(date));
         const breakStartObj = convertTimeStringsToDateObjects(breakStart, new Date(date));
         const breakEndObj = convertTimeStringsToDateObjects(breakEnd, new Date(date));
+        // console.log(start, end)
         while (start < end) {
             if (start < breakStartObj || start >= breakEndObj) {
                 slots.push(start);
@@ -97,7 +100,7 @@ export class BookingService {
                 },
             });
             if (!service) throw new GrpcItemNotFoundException('SERVICE_NOT_FOUND');
-
+            // console.log(dataFilter)
             // get slot bookings
             const slotBookingsInDay = this.getAllSlotInDay(
                 dataFilter.startTime ? dataFilter.startTime : service.time_service.start_time,
@@ -274,39 +277,84 @@ export class BookingService {
 
             if (employeesForSlot.length == 0) throw new GrpcItemNotFoundException('NO_EMPLOYEE');
 
-            // create booking
-            const booking = await this.prismaService.booking.create({
-                data: {
-                    start_time: new Date(dataCreate.startTime),
-                    end_time: new Date(
-                        new Date(dataCreate.startTime).getTime() +
-                            service.time_service.duration * MINUTE_IN_MS,
-                    ),
-                    Service: {
-                        connect: {
-                            id: dataCreate.service,
-                        },
+            // // create booking
+            // const booking = await this.prismaService.booking.create({
+            //     data: {
+            //         start_time: new Date(dataCreate.startTime),
+            //         end_time: new Date(
+            //             new Date(dataCreate.startTime).getTime() +
+            //                 service.time_service.duration * MINUTE_IN_MS,
+            //         ),
+            //         Service: {
+            //             connect: {
+            //                 id: dataCreate.service,
+            //             },
+            //         },
+            //         Employee: {
+            //             connect: {
+            //                 id: employeesForSlot[
+            //                     Math.floor(Math.random() * employeesForSlot.length)
+            //                 ].id,
+            //             },
+            //         },
+            //         note: dataCreate.note,
+            //         status: StatusBooking.PENDING,
+            //         user: user.email,
+            //         Voucher: voucherDiscount ? { connect: { id: dataCreate.voucher } } : {},
+            //         total_price: voucherDiscount
+            //             ? this.calPrice(
+            //                   service.price,
+            //                   voucherDiscount.discount_percent,
+            //                   voucherDiscount.max_discount,
+            //                   voucherDiscount.min_app_value,
+            //               )
+            //             : service.price,
+            //     },
+            // });
+
+            // Prepare the booking data
+            let bookingData: any = {
+                start_time: new Date(dataCreate.startTime),
+                end_time: new Date(
+                    new Date(dataCreate.startTime).getTime() +
+                        service.time_service.duration * MINUTE_IN_MS,
+                ),
+                Service: {
+                    connect: {
+                        id: dataCreate.service,
                     },
-                    Employee: {
-                        connect: {
-                            id: employeesForSlot[
-                                Math.floor(Math.random() * employeesForSlot.length)
-                            ].id,
-                        },
-                    },
-                    note: dataCreate.note,
-                    status: StatusBooking.PENDING,
-                    user: user.email,
-                    Voucher: voucherDiscount ? { connect: { id: dataCreate.voucher } } : {},
-                    total_price: voucherDiscount
-                        ? this.calPrice(
-                              service.price,
-                              voucherDiscount.discount_percent,
-                              voucherDiscount.max_discount,
-                              voucherDiscount.min_app_value,
-                          )
-                        : service.price,
                 },
+                Employee: {
+                    connect: {
+                        id: employeesForSlot[Math.floor(Math.random() * employeesForSlot.length)]
+                            .id,
+                    },
+                },
+                note: dataCreate.note,
+                status: StatusBooking.PENDING,
+                user: user.email,
+                total_price: service.price,
+            };
+
+            // Conditionally add voucher and adjust price if applicable
+            if (voucherDiscount) {
+                bookingData.Voucher = {
+                    connect: {
+                        id: dataCreate.voucher,
+                    },
+                };
+                console.log('check');
+                bookingData.total_price = this.calPrice(
+                    service.price,
+                    voucherDiscount.discount_percent,
+                    voucherDiscount.max_discount,
+                    voucherDiscount.min_app_value,
+                );
+            }
+
+            // Create booking
+            const booking = await this.prismaService.booking.create({
+                data: bookingData,
             });
 
             return {
@@ -357,6 +405,7 @@ export class BookingService {
                 date: booking.start_time.toISOString(),
                 endTime: booking.end_time.toISOString(),
                 startTime: booking.start_time.toISOString(),
+                voucherId: booking.voucher_id,
                 note: booking.note,
                 noteCancel: booking.note_cancel,
                 status: booking.status,
@@ -371,7 +420,7 @@ export class BookingService {
                     name: booking.Service.name,
                 },
                 user: data.user.email,
-                finalPrice: booking.total_price.toNumber(),
+                totalPrice: booking.total_price.toNumber(),
             };
         } catch (error) {
             throw error;
@@ -406,6 +455,8 @@ export class BookingService {
                         },
                     },
                     user: true,
+                    total_price: true,
+                    voucher_id: true,
                 },
             });
 
@@ -431,7 +482,8 @@ export class BookingService {
                     name: booking.Service.name,
                 },
                 // TODO calculate total price
-                finalPrice: 300000,
+                totalPrice: Number(booking.total_price),
+                voucherId: booking.voucher_id,
             };
         } catch (error) {
             throw error;
@@ -495,6 +547,8 @@ export class BookingService {
                         },
                     },
                     user: true,
+                    total_price: true,
+                    voucher_id: true,
                 },
             });
 
@@ -518,7 +572,8 @@ export class BookingService {
                     name: bookingUpdate.Service.name,
                 },
                 // TODO calculate total price
-                finalPrice: 300000,
+                totalPrice: Number(bookingUpdate.total_price),
+                voucherId: bookingUpdate.voucher_id,
             };
         } catch (error) {
             throw error;
@@ -590,5 +645,143 @@ export class BookingService {
         }
 
         return { result: 'success' };
+    }
+
+    async findAllBookingWithFilter(
+        email: string | undefined,
+        domain: string,
+        dataFilter: Omit<IFindAllBookingRequest, 'user'>,
+    ): Promise<IFindAllBookingResponse> {
+        // base on services
+        let serviceIds = dataFilter.services;
+
+        if (serviceIds.length === 0) {
+            const services = await this.prismaService.services.findMany({
+                where: {
+                    domain: domain,
+                },
+                select: {
+                    id: true,
+                },
+            });
+            serviceIds = services.map(service => service.id);
+        }
+
+        // base on date
+        let startDate = new Date(dataFilter.date[0]);
+        let endDate = new Date(dataFilter.date[1]);
+
+        // Ensure startDate is the earlier date and endDate is the later date
+        if (startDate > endDate) {
+            [startDate, endDate] = [endDate, startDate];
+        }
+
+        startDate.setHours(0, 0, 0, 0); // set start of the day
+        endDate.setHours(23, 59, 59, 999); // set end of the day
+        // base on status
+        const statuses = dataFilter.status;
+
+        // divide result base on page and limit per page
+        const page = dataFilter.page || 1;
+        const limit = dataFilter.limit || 10;
+        const skip = (page - 1) * limit;
+
+        let whereClause: any = {
+            user: email,
+        };
+
+        if (serviceIds.length > 0) {
+            whereClause.service_id = {
+                in: serviceIds,
+            };
+        }
+
+        if (dataFilter.date.length > 0) {
+            whereClause.start_time = {
+                gte: startDate,
+                lt: endDate,
+            };
+        }
+
+        if (statuses.length > 0) {
+            whereClause.status = {
+                in: statuses,
+            };
+        }
+
+        let bookingsWithDataFilter = await this.prismaService.booking.findMany({
+            where: whereClause,
+            take: limit,
+            skip: skip,
+            orderBy: {
+                created_at: 'desc',
+            },
+            select: {
+                id: true,
+                start_time: true,
+                end_time: true,
+                note: true,
+                note_cancel: true,
+                status: true,
+                Employee: {
+                    select: {
+                        id: true,
+                        first_name: true,
+                        last_name: true,
+                        email: true,
+                    },
+                },
+                Service: {
+                    select: {
+                        id: true,
+                        name: true,
+                    },
+                },
+                voucher_id: true,
+                total_price: true,
+                user: true,
+            },
+        });
+
+        return {
+            bookings: bookingsWithDataFilter.map(booking => ({
+                id: booking.id,
+                date: booking.start_time.toISOString(),
+                endTime: booking.end_time.toISOString(),
+                startTime: booking.start_time.toISOString(),
+                voucherId: booking.voucher_id,
+                note: booking.note,
+                noteCancel: booking.note_cancel,
+                status: booking.status,
+                employee: {
+                    id: booking.Employee.id,
+                    firstName: booking.Employee.first_name,
+                    lastName: booking.Employee.last_name,
+                    email: booking.Employee.email,
+                },
+                service: {
+                    id: booking.Service.id,
+                    name: booking.Service.name,
+                },
+                user: booking.user,
+                totalPrice: booking.total_price.toNumber(),
+            })),
+        };
+    }
+
+    async findAllBooking(data: IFindAllBookingRequest): Promise<IFindAllBookingResponse> {
+        const { user, ...dataFilter } = data;
+
+        try {
+            if (user.role.toString() === getEnumKeyByEnumValue(Role, Role.TENANT)) {
+                return await this.findAllBookingWithFilter(undefined, user.domain, dataFilter);
+            } else if (user.role.toString() === getEnumKeyByEnumValue(Role, Role.USER)) {
+                return await this.findAllBookingWithFilter(user.email, user.domain, dataFilter);
+            } else {
+                throw new GrpcPermissionDeniedException('PERMISSION_DENIED');
+            }
+        } catch (error) {
+            throw error;
+        }
     }
 }

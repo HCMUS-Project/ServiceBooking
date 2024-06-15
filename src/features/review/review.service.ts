@@ -16,6 +16,7 @@ import {
     GrpcInvalidArgumentException,
     GrpcPermissionDeniedException,
 } from 'nestjs-grpc-exceptions';
+import { Decimal } from '@prisma/client/runtime/library';
 
 @Injectable()
 export class ReviewService {
@@ -30,64 +31,83 @@ export class ReviewService {
         }
 
         try {
-            // Check if user has purchased the product
-            if (
-                user.role.toString() === getEnumKeyByEnumValue(Role, Role.USER) &&
-                !(await this.checkUserPurchase(user.email, dataCreate.serviceId))
-            ) {
-                throw new GrpcInvalidArgumentException('USER_HAS_NOT_PURCHASED_SERVICE');
-            }
+            return await this.prismaService.$transaction(async transaction => {
+                // Check if user has purchased the product
+                if (
+                    user.role.toString() === getEnumKeyByEnumValue(Role, Role.USER) &&
+                    !(await this.checkUserPurchase(user.email, dataCreate.serviceId, transaction))
+                ) {
+                    throw new GrpcInvalidArgumentException('USER_HAS_NOT_PURCHASED_SERVICE');
+                }
 
-            const reviewConditions = {
-                service_id: dataCreate.serviceId,
-                user: user.email,
-            };
+                const reviewConditions = { service_id: dataCreate.serviceId, user: user.email };
+                const reviewExists = await transaction.review.findFirst({
+                    where: reviewConditions,
+                });
 
-            const reviewExists = await this.prismaService.review.findFirst({
-                where: reviewConditions,
+                let review = null;
+                let service = await transaction.services.findUnique({
+                    where: { id: dataCreate.serviceId },
+                });
+
+                // let decimalRating = new Decimal(dataCreate.rating);
+                if (reviewExists) {
+                    // const oldRating = new Decimal(reviewExists.rating);
+                    review = await transaction.review.update({
+                        where: { id: reviewExists.id },
+                        data: { rating: dataCreate.rating, review: dataCreate.review },
+                    });
+                    // Calculate new average rating
+                    const newRating =
+                        (service.rating * service.number_rating -
+                            Number(reviewExists.rating) +
+                            dataCreate.rating) /
+                        service.number_rating;
+                    // Update service
+                    await transaction.services.update({
+                        where: { id: dataCreate.serviceId },
+                        data: { rating: newRating },
+                    });
+                } else {
+                    review = await transaction.review.create({
+                        data: {
+                            ...reviewConditions,
+                            rating: dataCreate.rating,
+                            review: dataCreate.review,
+                        },
+                    });
+                    // Calculate new average rating
+                    const newRating =
+                        (service.rating * service.number_rating + Number(review.rating)) /
+                        (service.number_rating + 1);
+                    // Update service
+                    await transaction.services.update({
+                        where: { id: dataCreate.serviceId },
+                        data: {
+                            rating: newRating,
+                            number_rating: { increment: 1 },
+                        },
+                    });
+                }
+
+                return {
+                    review: {
+                        ...review,
+                        serviceId: review.service_id,
+                        createdAt: review.created_at.toISOString(),
+                        updatedAt: review.updated_at.toISOString(),
+                    },
+                };
             });
-
-            let review = null;
-            // Check if review exists then update review else create review
-            if (reviewExists !== null) {
-                // Update review
-                review = await this.prismaService.review.update({
-                    where: {
-                        id: reviewExists.id,
-                    },
-                    data: {
-                        rating: dataCreate.rating,
-                        review: dataCreate.review,
-                    },
-                });
-            } else {
-                // Create review
-                review = await this.prismaService.review.create({
-                    data: {
-                        ...reviewConditions,
-                        rating: dataCreate.rating,
-                        review: dataCreate.review,
-                    },
-                });
-            }
-
-            return {
-                review: {
-                    ...review,
-                    serviceId: review.service_id,
-                    createdAt: review.created_at.toISOString(),
-                    updatedAt: review.updated_at.toISOString(),
-                },
-            };
         } catch (error) {
             throw error;
         }
     }
 
-    async checkUserPurchase(user: string, serviceId: string) {
+    async checkUserPurchase(user: string, serviceId: string, transaction) {
         try {
             // Check if user has purchased the product
-            const bookingDone = await this.prismaService.booking.findFirst({
+            const bookingDone = await transaction.booking.findFirst({
                 where: {
                     user: user,
                     service_id: serviceId,
@@ -168,35 +188,51 @@ export class ReviewService {
         }
 
         try {
-            // check if review exists
-            if (
-                !(await this.prismaService.review.findFirst({
-                    where: { id: dataUpdate.id, user: user.email },
-                }))
-            ) {
-                throw new GrpcInvalidArgumentException('REVIEW_NOT_FOUND');
-            }
+            return await this.prismaService.$transaction(async transaction => {
+                const reviewConditions = { service_id: dataUpdate.id, user: user.email };
+                const reviewExists = await transaction.review.findFirst({
+                    where: reviewConditions,
+                });
+                // check if review exists
+                if (!reviewExists) {
+                    throw new GrpcInvalidArgumentException('REVIEW_NOT_FOUND');
+                }
+                console.log(dataUpdate)
+                let service = await transaction.services.findUnique({
+                    where: { id: reviewExists.service_id },
+                });
 
-            // check if user has purchased the product
-            const reviewUpdate = await this.prismaService.review.update({
-                where: {
-                    id: dataUpdate.id,
-                },
-                data: {
-                    rating: dataUpdate.rating,
-                    review: dataUpdate.review,
-                },
+                // Calculate new average rating
+                const newRating =
+                    (service.rating * service.number_rating -
+                        Number(reviewExists.rating) +
+                        dataUpdate.rating) /
+                    service.number_rating;
+                const reviewUpdate = await transaction.review.update({
+                    where: {
+                        id: reviewExists.id,
+                    },
+                    data: {
+                        rating: dataUpdate.rating,
+                        review: dataUpdate.review,
+                    },
+                });
+                // Update service
+                await transaction.services.update({
+                    where: { id: reviewUpdate.service_id },
+                    data: { rating: newRating },
+                });
+
+                return {
+                    review: {
+                        ...reviewUpdate,
+                        createdAt: reviewUpdate.created_at.toISOString(),
+                        updatedAt: reviewUpdate.updated_at.toISOString(),
+                        serviceId: reviewUpdate.service_id,
+                        rating: Number(reviewUpdate.rating),
+                    },
+                };
             });
-
-            return {
-                review: {
-                    ...reviewUpdate,
-                    createdAt: reviewUpdate.created_at.toISOString(),
-                    updatedAt: reviewUpdate.updated_at.toISOString(),
-                    serviceId: reviewUpdate.service_id,
-                    rating: Number(reviewUpdate.rating),
-                },
-            };
         } catch (error) {
             throw error;
         }

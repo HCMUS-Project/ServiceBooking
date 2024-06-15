@@ -11,7 +11,7 @@ service BookingService {
     rpc FindSlotBookings(FindSlotBookingsRequest) returns (FindSlotBookingsResponse);
     rpc UpdateStatusBooking(UpdateStatusBookingRequest) returns (FindOneResponse);
     rpc DeleteBooking(DeleteBookingRequest) returns (DeleteBookingResponse);
-    rpc FindAllBookingt(FindAllBookingRequest) returns(FindAllBookingResponse);
+    rpc FindAllBooking(FindAllBookingRequest) returns(FindAllBookingResponse);
 }
 
 message Emp{
@@ -101,7 +101,9 @@ message FindAllBookingRequest{
     userToken.User user = 1;
     repeated string status = 2;
     repeated string date = 3;
-    string services = 4;
+    repeated string services = 4;
+    optional int32 page = 5;
+    optional int32 limit = 6;
 }
 
 message FindAllBookingResponse{

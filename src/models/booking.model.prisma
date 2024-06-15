@@ -2,7 +2,7 @@ model Booking {
     id          String   @id @default(uuid())
     user        String
     service_id  String
-    voucher_id  String
+    voucher_id  String?
     employee_id String
     start_time  DateTime
     end_time    DateTime
