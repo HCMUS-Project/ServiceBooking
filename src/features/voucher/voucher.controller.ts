@@ -30,7 +30,7 @@ export class VoucherController {
 
     @GrpcMethod('VoucherService', 'FindAllVouchers')
     async findAll(data: IFindAllVouchersRequest): Promise<IFindAllVouchersResponse> {
-        return await this.voucherService.findAll(data.user.role);
+        return await this.voucherService.findAll(data);
     }
 
     @GrpcMethod('VoucherService', 'EditVoucher')

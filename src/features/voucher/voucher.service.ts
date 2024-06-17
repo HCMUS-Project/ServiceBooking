@@ -74,14 +74,33 @@ export class VoucherService {
         }
     }
 
-    async findAll(role: Role): Promise<IFindAllVouchersResponse> {
+    async findAll(data: IFindAllVouchersRequest): Promise<IFindAllVouchersResponse> {
         try {
             // find all categories by domain
             // check role of user
-            if (role.toString() !== getEnumKeyByEnumValue(Role, Role.TENANT)) {
-                throw new GrpcPermissionDeniedException('PERMISSION_DENIED');
-            }
-            const vouchers = await this.prismaService.voucher.findMany();
+            // if (role.toString() !== getEnumKeyByEnumValue(Role, Role.TENANT)) {
+            //     throw new GrpcPermissionDeniedException('PERMISSION_DENIED');
+            // }
+            // Find all services in the domain
+            const services = await this.prismaService.services.findMany({
+                where: {
+                    domain: data.user.domain,
+                },
+                select: {
+                    id: true,
+                },
+            });
+
+            // Extract the service IDs
+            const serviceIds = services.map(service => service.id);
+
+            const vouchers = await this.prismaService.voucher.findMany({
+                where: {
+                    service_id: {
+                        in: serviceIds,
+                    },
+                },
+            });
             // console.log('abc')
             return {
                 vouchers: vouchers.map(voucher => ({
