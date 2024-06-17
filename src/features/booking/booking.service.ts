@@ -391,10 +391,12 @@ export class BookingService {
                         select: {
                             id: true,
                             name: true,
+                            images: true
                         },
                     },
                     voucher_id: true,
                     total_price: true,
+                    created_at: true
                 },
             });
 
@@ -418,9 +420,11 @@ export class BookingService {
                 service: {
                     id: booking.Service.id,
                     name: booking.Service.name,
+                    images: booking.Service.images
                 },
                 user: data.user.email,
                 totalPrice: booking.total_price.toNumber(),
+                createdAt: booking.created_at.toISOString()
             };
         } catch (error) {
             throw error;
@@ -452,11 +456,13 @@ export class BookingService {
                         select: {
                             id: true,
                             name: true,
+                            images: true
                         },
                     },
                     user: true,
                     total_price: true,
                     voucher_id: true,
+                    created_at: true
                 },
             });
 
@@ -480,10 +486,12 @@ export class BookingService {
                 service: {
                     id: booking.Service.id,
                     name: booking.Service.name,
+                    images: booking.Service.images
                 },
                 // TODO calculate total price
                 totalPrice: Number(booking.total_price),
                 voucherId: booking.voucher_id,
+                createdAt: booking.created_at.toISOString()
             };
         } catch (error) {
             throw error;
@@ -544,11 +552,13 @@ export class BookingService {
                         select: {
                             id: true,
                             name: true,
+                            images: true,
                         },
                     },
                     user: true,
                     total_price: true,
                     voucher_id: true,
+                    created_at: true
                 },
             });
 
@@ -570,10 +580,12 @@ export class BookingService {
                 service: {
                     id: bookingUpdate.Service.id,
                     name: bookingUpdate.Service.name,
+                    images: bookingUpdate.Service.images
                 },
                 // TODO calculate total price
                 totalPrice: Number(bookingUpdate.total_price),
                 voucherId: bookingUpdate.voucher_id,
+                createdAt: bookingUpdate.created_at.toISOString()
             };
         } catch (error) {
             throw error;
@@ -735,11 +747,13 @@ export class BookingService {
                     select: {
                         id: true,
                         name: true,
+                        images: true,
                     },
                 },
                 voucher_id: true,
                 total_price: true,
                 user: true,
+                created_at: true,
             },
         });
 
@@ -762,9 +776,11 @@ export class BookingService {
                 service: {
                     id: booking.Service.id,
                     name: booking.Service.name,
+                    images: booking.Service.images
                 },
                 user: booking.user,
                 totalPrice: booking.total_price.toNumber(),
+                createdAt: booking.created_at.toISOString(),
             })),
         };
     }

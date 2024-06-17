@@ -24,6 +24,7 @@ message Emp{
 message Service{
     string id = 1;
     string name = 2;
+    repeated string images = 3;
 }
 
 message SlotBooking{
@@ -79,6 +80,7 @@ message FindOneResponse{
     Service service = 10;
     float total_price = 11;
     string voucher_id = 12;
+    string created_at = 13;
 }
 
 message DeleteBookingRequest{
