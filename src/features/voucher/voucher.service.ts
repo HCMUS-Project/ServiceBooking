@@ -25,7 +25,7 @@ export class VoucherService {
 
     async create(data: ICreateVoucherRequest): Promise<ICreateVoucherResponse> {
         const { user, ...voucher } = data;
-
+        // jklkjlewf
         // check role of user
         if (user.role.toString() !== getEnumKeyByEnumValue(Role, Role.TENANT)) {
             throw new GrpcPermissionDeniedException('PERMISSION_DENIED');
