@@ -46,7 +46,7 @@ message FindOneEmployeeResponse {
     string image = 6;
     repeated string work_days = 7;
     repeated string work_shift = 8;
-    repeated string services = 9;
+    repeated Service services = 9;
 }
 
 message FindEmployeeRequest{

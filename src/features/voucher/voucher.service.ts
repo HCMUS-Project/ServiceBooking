@@ -51,6 +51,8 @@ export class VoucherService {
                 throw new GrpcItemExitException('VOUCHER_EXIST');
             }
 
+            const start_date = voucher.startAt ? new Date(voucher.startAt) : new Date();
+
             // create voucher
             const voucherNew = await this.prismaService.voucher.create({
                 data: {
@@ -60,7 +62,8 @@ export class VoucherService {
                     max_discount: voucher.maxDiscount,
                     min_app_value: voucher.minAppValue,
                     discount_percent: voucher.discountPercent,
-                    expire_at: new Date(voucher.expiredAt),
+                    expire_at: new Date(voucher.expireAt),
+                    start_at: start_date,
                 },
             });
 
@@ -85,6 +88,7 @@ export class VoucherService {
             const services = await this.prismaService.services.findMany({
                 where: {
                     domain: data.user.domain,
+                    id: data.service,
                 },
                 select: {
                     id: true,
@@ -98,6 +102,12 @@ export class VoucherService {
                 where: {
                     service_id: {
                         in: serviceIds,
+                    },
+                    expire_at: {
+                        gte: new Date(),
+                    },
+                    start_at: {
+                        lte: new Date(),
                     },
                 },
             });
@@ -113,8 +123,9 @@ export class VoucherService {
                     maxDiscount: voucher.max_discount,
                     minAppValue: voucher.min_app_value,
                     discountPercent: voucher.discount_percent,
-                    expiredAt: voucher.expire_at.toString(),
+                    expireAt: voucher.expire_at.toString(),
                     createdAt: voucher.created_at.toString(),
+                    startAt: voucher.start_at.toString(),
                 })),
             };
         } catch (error) {
@@ -148,8 +159,9 @@ export class VoucherService {
                 maxDiscount: voucher.max_discount,
                 minAppValue: voucher.min_app_value,
                 discountPercent: voucher.discount_percent,
-                expiredAt: voucher.expire_at.toString(),
+                expireAt: voucher.expire_at.toString(),
                 createdAt: voucher.created_at.toString(),
+                startAt: voucher.start_at.toString(),
             } as IVoucher;
 
             return {
@@ -201,8 +213,13 @@ export class VoucherService {
                         case 'discountPercent':
                             dbKey = 'discount_percent';
                             break;
-                        case 'expiredTime':
-                            dbKey = 'expired_time';
+                        case 'expireAt':
+                            dbKey = 'expired_at';
+                            updateData[dbKey] = new Date(dataUpdate[key]);
+                            break;
+                        case 'startAt':
+                            dbKey = 'start_at';
+                            updateData[dbKey] = new Date(dataUpdate[key]);
                             break;
                         default:
                             dbKey = key;

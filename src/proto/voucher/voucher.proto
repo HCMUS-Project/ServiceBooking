@@ -20,7 +20,8 @@ message CreateVoucherRequest {
     float max_discount = 5;
     float min_app_value = 6;
     float discount_percent = 7;
-    string expired_at = 8; // Should be formatted as per DateTime format in your application
+    string expire_at = 8; // Should be formatted as per DateTime format in your application
+    optional string start_at = 9; 
 }
 
 message Voucher{
@@ -32,8 +33,10 @@ message Voucher{
     float max_discount = 6;
     float min_app_value = 7;
     float discount_percent = 8;
-    string expired_at = 9;
+    string expire_at = 9;
     string created_at = 10;
+    // bool is_voucher_valid = 11;
+    string start_at = 11;
 }
 
 message CreateVoucherResponse {
@@ -48,7 +51,8 @@ message EditVoucherRequest {
     optional float max_discount = 5; // Updated max discount value (optional)
     optional float min_app_value = 6; // Updated min app value (optional)
     optional float discount_percent = 7; // Updated discount percent (optional)
-    optional string expired_at = 8; // Updated expiry time (optional)
+    optional string expire_at = 8; // Updated expiry time (optional)
+    optional string start_at = 9; // Updated expiry time (optional)
 }
 
 message EditVoucherResponse {
@@ -66,6 +70,7 @@ message DeleteVoucherResponse {
 
 message FindAllVouchersRequest {
     userToken.User user = 1;
+    string service = 2;
 }
 
 message FindAllVouchersResponse {
