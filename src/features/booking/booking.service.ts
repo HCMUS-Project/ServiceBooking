@@ -9,6 +9,8 @@ import {
     IFindOneResponse,
     IFindSlotBookingsRequest,
     IFindSlotBookingsResponse,
+    IGetBookingsReportOfListUsersRequest,
+    IGetBookingsReportOfListUsersResponse,
     IUpdateStatusBookingRequest,
 } from './interface/booking.interface';
 import { WorkDays } from 'src/common/enums/workDays';
@@ -21,7 +23,10 @@ import { getEnumKeyByEnumValue } from 'src/util/convert_enum/get_key_enum';
 import { Role } from 'src/proto_build/auth/user_token_pb';
 import { StatusBooking } from 'src/common/enums/status_booking.enum';
 import { MailerService } from '@nestjs-modules/mailer';
-import { GrpcPermissionDeniedException } from 'nestjs-grpc-exceptions';
+import {
+    GrpcPermissionDeniedException,
+    GrpcUnauthenticatedException,
+} from 'nestjs-grpc-exceptions';
 import { PrismaService } from 'src/core/prisma/prisma.service';
 
 const MINUTE_IN_MS = 60000;
@@ -391,12 +396,12 @@ export class BookingService {
                         select: {
                             id: true,
                             name: true,
-                            images: true
+                            images: true,
                         },
                     },
                     voucher_id: true,
                     total_price: true,
-                    created_at: true
+                    created_at: true,
                 },
             });
 
@@ -420,11 +425,11 @@ export class BookingService {
                 service: {
                     id: booking.Service.id,
                     name: booking.Service.name,
-                    images: booking.Service.images
+                    images: booking.Service.images,
                 },
                 user: data.user.email,
                 totalPrice: booking.total_price.toNumber(),
-                createdAt: booking.created_at.toISOString()
+                createdAt: booking.created_at.toISOString(),
             };
         } catch (error) {
             throw error;
@@ -456,13 +461,13 @@ export class BookingService {
                         select: {
                             id: true,
                             name: true,
-                            images: true
+                            images: true,
                         },
                     },
                     user: true,
                     total_price: true,
                     voucher_id: true,
-                    created_at: true
+                    created_at: true,
                 },
             });
 
@@ -486,12 +491,12 @@ export class BookingService {
                 service: {
                     id: booking.Service.id,
                     name: booking.Service.name,
-                    images: booking.Service.images
+                    images: booking.Service.images,
                 },
                 // TODO calculate total price
                 totalPrice: Number(booking.total_price),
                 voucherId: booking.voucher_id,
-                createdAt: booking.created_at.toISOString()
+                createdAt: booking.created_at.toISOString(),
             };
         } catch (error) {
             throw error;
@@ -558,7 +563,7 @@ export class BookingService {
                     user: true,
                     total_price: true,
                     voucher_id: true,
-                    created_at: true
+                    created_at: true,
                 },
             });
 
@@ -580,12 +585,12 @@ export class BookingService {
                 service: {
                     id: bookingUpdate.Service.id,
                     name: bookingUpdate.Service.name,
-                    images: bookingUpdate.Service.images
+                    images: bookingUpdate.Service.images,
                 },
                 // TODO calculate total price
                 totalPrice: Number(bookingUpdate.total_price),
                 voucherId: bookingUpdate.voucher_id,
-                createdAt: bookingUpdate.created_at.toISOString()
+                createdAt: bookingUpdate.created_at.toISOString(),
             };
         } catch (error) {
             throw error;
@@ -776,7 +781,7 @@ export class BookingService {
                 service: {
                     id: booking.Service.id,
                     name: booking.Service.name,
-                    images: booking.Service.images
+                    images: booking.Service.images,
                 },
                 user: booking.user,
                 totalPrice: booking.total_price.toNumber(),
@@ -796,6 +801,54 @@ export class BookingService {
             } else {
                 throw new GrpcPermissionDeniedException('PERMISSION_DENIED');
             }
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async getBookingsReportOfListUsers(
+        data: IGetBookingsReportOfListUsersRequest,
+    ): Promise<IGetBookingsReportOfListUsersResponse> {
+        const { user, ...listUsers } = data;
+        // console.log(data);
+        if (user.role.toString() !== getEnumKeyByEnumValue(Role, Role.TENANT)) {
+            throw new GrpcUnauthenticatedException('PERMISSION_DENIED');
+        }
+
+        if (user.domain === '') throw new GrpcUnauthenticatedException('DOMAIN_IS_EMPTY');
+
+        try {
+            const bookings = await this.prismaService.booking.groupBy({
+                by: ['user'],
+                where: {
+                    AND: [
+                        {
+                            status: 'SUCCESS',
+                        },
+                        {
+                            user: {
+                                in: listUsers.emails,
+                            },
+                        },
+                        {
+                            Service: {
+                                domain: user.domain,
+                            },
+                        },
+                    ],
+                },
+                _count: {
+                    id: true,
+                },
+            });
+            // console.log(orders);
+
+            return {
+                reportBooking: bookings.map(booking => ({
+                    email: booking.user,
+                    totalBooking: booking._count.id,
+                })),
+            };
         } catch (error) {
             throw error;
         }

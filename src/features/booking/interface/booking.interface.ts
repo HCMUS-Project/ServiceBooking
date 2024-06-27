@@ -11,6 +11,9 @@ import {
     FindAllBookingRequest,
     FindAllBookingResponse,
     Service,
+    BookingReportOfUser,
+    GetBookingsReportOfListUsersRequest,
+    GetBookingsReportOfListUsersResponse,
 } from 'src/proto_build/booking/booking_pb';
 import { ISlotBooking } from './slot_booking.interface';
 
@@ -32,7 +35,7 @@ export interface IFindOneRequest extends FindOneRequest.AsObject {}
 // }
 
 export interface IFindOneResponse extends Omit<FindOneResponse.AsObject, 'service'> {
-    service: IService
+    service: IService;
 }
 
 export interface IDeleteBookingRequest extends DeleteBookingRequest.AsObject {}
@@ -49,4 +52,15 @@ export interface IFindAllBookingRequest
 export interface IFindAllBookingResponse
     extends Omit<FindAllBookingResponse.AsObject, 'bookingsList'> {
     bookings: IFindOneResponse[];
+}
+
+export interface IBookingReportOfUser extends BookingReportOfUser.AsObject {}
+
+export interface IGetBookingsReportOfListUsersRequest
+    extends Omit<GetBookingsReportOfListUsersRequest.AsObject, 'emailsList'> {
+    emails: string[];
+}
+export interface IGetBookingsReportOfListUsersResponse
+    extends Omit<GetBookingsReportOfListUsersResponse.AsObject, 'reportBookingList'> {
+    reportBooking: IBookingReportOfUser[];
 }

@@ -12,6 +12,8 @@ import {
     IFindOneResponse,
     IFindSlotBookingsRequest,
     IFindSlotBookingsResponse,
+    IGetBookingsReportOfListUsersRequest,
+    IGetBookingsReportOfListUsersResponse,
     IUpdateStatusBookingRequest,
 } from './interface/booking.interface';
 
@@ -47,5 +49,12 @@ export class BookingController {
     @GrpcMethod('BookingService', 'FindAllBooking')
     async findAllBooking(data: IFindAllBookingRequest): Promise<IFindAllBookingResponse> {
         return await this.bookingService.findAllBooking(data);
+    }
+
+    @GrpcMethod('BookingService', 'GetBookingsReportOfListUsers')
+    async getBookingsReportOfListUsers(
+        data: IGetBookingsReportOfListUsersRequest,
+    ): Promise<IGetBookingsReportOfListUsersResponse> {
+        return await this.bookingService.getBookingsReportOfListUsers(data);
     }
 }
