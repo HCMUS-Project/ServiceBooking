@@ -14,6 +14,9 @@ import {
     BookingReportOfUser,
     GetBookingsReportOfListUsersRequest,
     GetBookingsReportOfListUsersResponse,
+    BookingReportByDate,
+    GetBookingsValueByDateTypeRequest,
+    GetBookingsValueByDateTypeResponse,
 } from 'src/proto_build/booking/booking_pb';
 import { ISlotBooking } from './slot_booking.interface';
 
@@ -63,4 +66,14 @@ export interface IGetBookingsReportOfListUsersRequest
 export interface IGetBookingsReportOfListUsersResponse
     extends Omit<GetBookingsReportOfListUsersResponse.AsObject, 'reportBookingList'> {
     reportBooking: IBookingReportOfUser[];
+}
+
+export interface IBookingReportByDate extends BookingReportByDate.AsObject {}
+
+export interface IGetBookingsValueByDateTypeRequest
+    extends GetBookingsValueByDateTypeRequest.AsObject {}
+
+export interface IGetBookingsValueByDateTypeResponse
+    extends Omit<GetBookingsValueByDateTypeResponse.AsObject, 'reportList'> {
+    report: IBookingReportByDate[];
 }

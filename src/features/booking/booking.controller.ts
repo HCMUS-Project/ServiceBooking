@@ -14,6 +14,8 @@ import {
     IFindSlotBookingsResponse,
     IGetBookingsReportOfListUsersRequest,
     IGetBookingsReportOfListUsersResponse,
+    IGetBookingsValueByDateTypeRequest,
+    IGetBookingsValueByDateTypeResponse,
     IUpdateStatusBookingRequest,
 } from './interface/booking.interface';
 
@@ -56,5 +58,12 @@ export class BookingController {
         data: IGetBookingsReportOfListUsersRequest,
     ): Promise<IGetBookingsReportOfListUsersResponse> {
         return await this.bookingService.getBookingsReportOfListUsers(data);
+    }
+
+    @GrpcMethod('BookingService', 'GetBookingsValueByDateType')
+    async GetBookingsValueByDateType(
+        data: IGetBookingsValueByDateTypeRequest,
+    ): Promise<IGetBookingsValueByDateTypeResponse> {
+        return await this.bookingService.getBookingsValueByDateType(data);
     }
 }

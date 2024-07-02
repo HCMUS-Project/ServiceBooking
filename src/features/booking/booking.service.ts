@@ -11,6 +11,8 @@ import {
     IFindSlotBookingsResponse,
     IGetBookingsReportOfListUsersRequest,
     IGetBookingsReportOfListUsersResponse,
+    IGetBookingsValueByDateTypeRequest,
+    IGetBookingsValueByDateTypeResponse,
     IUpdateStatusBookingRequest,
 } from './interface/booking.interface';
 import { WorkDays } from 'src/common/enums/workDays';
@@ -28,6 +30,7 @@ import {
     GrpcUnauthenticatedException,
 } from 'nestjs-grpc-exceptions';
 import { PrismaService } from 'src/core/prisma/prisma.service';
+import { DateType } from 'src/proto_build/booking/booking_pb';
 
 const MINUTE_IN_MS = 60000;
 
@@ -506,9 +509,9 @@ export class BookingService {
     async updateStatusBooking(data: IUpdateStatusBookingRequest): Promise<IFindOneResponse> {
         const { user, status, id } = data;
 
-        if (user.role.toString() === getEnumKeyByEnumValue(Role, Role.TENANT)) {
-            throw new GrpcPermissionDeniedException('PERMISSION_DENIED');
-        }
+        // if (user.role.toString() === getEnumKeyByEnumValue(Role, Role.TENANT)) {
+        //     throw new GrpcPermissionDeniedException('PERMISSION_DENIED');
+        // }
 
         try {
             // check booking exist
@@ -852,5 +855,186 @@ export class BookingService {
         } catch (error) {
             throw error;
         }
+    }
+
+    async getBookingsValueByDateType(
+        data: IGetBookingsValueByDateTypeRequest,
+    ): Promise<IGetBookingsValueByDateTypeResponse> {
+        if (data.user.role.toString() !== getEnumKeyByEnumValue(Role, Role.TENANT)) {
+            throw new GrpcUnauthenticatedException('PERMISSION_DENIED');
+        }
+        try {
+            const bookings = await this.prismaService.booking.findMany({
+                where: {
+                    AND: [
+                        {
+                            status: 'SUCCESS',
+                        },
+                        {
+                            Service: {
+                                domain: data.user.domain,
+                            },
+                        },
+                    ],
+                },
+                select: {
+                    id: true,
+                    total_price: true,
+                    created_at: true,
+                },
+            });
+
+            // console.log(bookings)
+
+            let totalBookings = 0;
+            let totalValue = 0;
+            const reportBookings = [];
+
+            if (data.type.toString() === getEnumKeyByEnumValue(DateType, DateType.WEEK)) {
+                const bookingsByWeek: {
+                    [key: string]: { totalBookings: number; totalValue: number };
+                } = {};
+
+                bookings.forEach(booking => {
+                    // console.log(order);
+                    const dayOfWeek = this.getDayOfWeek(new Date(booking.created_at));
+                    // console.log(weekNumber);
+                    if (bookingsByWeek[dayOfWeek]) {
+                        bookingsByWeek[dayOfWeek].totalBookings += 1;
+                        bookingsByWeek[dayOfWeek].totalValue += Number(booking.total_price);
+                    } else {
+                        bookingsByWeek[dayOfWeek] = {
+                            totalBookings: 1,
+                            totalValue: Number(booking.total_price),
+                        };
+                    }
+                    totalBookings += 1;
+                    totalValue += Number(booking.total_price);
+                });
+                for (const [week, report] of Object.entries(bookingsByWeek)) {
+                    reportBookings.push({
+                        type: week,
+                        totalBookings: report.totalBookings,
+                        totalValue: report.totalValue,
+                    });
+                }
+            } else if (data.type.toString() === getEnumKeyByEnumValue(DateType, DateType.YEAR)) {
+                // if (data.type === 'year')
+                const bookingsByYear: {
+                    [key: string]: { totalBookings: number; totalValue: number };
+                } = {};
+
+                bookings.forEach(booking => {
+                    // console.log(booking);
+                    const mongth = this.getMonth(new Date(booking.created_at));
+                    // console.log(mongth);
+                    if (bookingsByYear[mongth]) {
+                        bookingsByYear[mongth].totalBookings += 1;
+                        bookingsByYear[mongth].totalValue += Number(booking.total_price);
+                    } else {
+                        bookingsByYear[mongth] = {
+                            totalBookings: 1,
+                            totalValue: Number(booking.total_price),
+                        };
+                    }
+                    totalBookings += 1;
+                    totalValue += Number(booking.total_price);
+                });
+
+                for (const [week, report] of Object.entries(bookingsByYear)) {
+                    reportBookings.push({
+                        type: week,
+                        totalBookings: report.totalBookings,
+                        totalValue: report.totalValue,
+                    });
+                }
+            } else if (data.type.toString() === getEnumKeyByEnumValue(DateType, DateType.MONTH)) {
+                // if (data.type === 'year')
+                const bookingsByWeekInMonth: {
+                    [key: string]: { totalBookings: number; totalValue: number };
+                } = {};
+
+                bookings.forEach(booking => {
+                    // console.log(booking.created_at.getUTCMonth() , new Date().getMonth())
+                    if (booking.created_at.getUTCMonth() === new Date().getMonth()) {
+                        // console.log('haha');
+                        const weekNumberInMonth = this.getWeekOfMonth(new Date(booking.created_at));
+                        // console.log(weekNumberInMonth);
+                        if (bookingsByWeekInMonth[weekNumberInMonth]) {
+                            bookingsByWeekInMonth[weekNumberInMonth].totalBookings += 1;
+                            bookingsByWeekInMonth[weekNumberInMonth].totalValue += Number(
+                                booking.total_price,
+                            );
+                        } else {
+                            bookingsByWeekInMonth[weekNumberInMonth] = {
+                                totalBookings: 1,
+                                totalValue: Number(booking.total_price),
+                            };
+                        }
+                        totalBookings += 1;
+                        totalValue += Number(booking.total_price);
+                    }
+                });
+
+                for (const [week, report] of Object.entries(bookingsByWeekInMonth)) {
+                    reportBookings.push({
+                        type: week,
+                        totalBookings: report.totalBookings,
+                        totalValue: report.totalValue,
+                    });
+                }
+            }
+
+            return {
+                report: reportBookings,
+                total: totalBookings,
+                value: totalValue,
+            };
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    getWeekOfMonth(date: Date): string {
+        // Get the first day of the month
+        const firstDayOfMonth = new Date(date.getFullYear(), date.getUTCMonth(), 1);
+        // Get the day of the week for the first day of the month (0 is Sunday, 6 is Saturday)
+        let firstDayOfWeek = firstDayOfMonth.getDay();
+
+        // Adjust to make Monday the first day of the week
+        // If the first day is Sunday (0), set it to 7 for easier calculations
+        if (firstDayOfWeek === 0) {
+            firstDayOfWeek = 7;
+        }
+
+        // Calculate the adjusted date for Monday start week
+        // console.log(date.getUTCDate() + firstDayOfWeek);
+        const adjustedDate = date.getUTCDate() + firstDayOfWeek - 2;
+        const weekNumber = Math.floor(adjustedDate / 7) + 1;
+
+        return `WEEK_${weekNumber}`;
+    }
+
+    getDayOfWeek(date: Date): string {
+        const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+        return days[date.getUTCDay()];
+    }
+
+    getMonth(date: Date): string {
+        const months = [
+            'January',
+            'February',
+            'March',
+            'April',
+            'May',
+            'June',
+            'July',
+            'August',
+            'September',
+            'October',
+            'November',
+            'December',
+        ];
+        return months[date.getUTCMonth()];
     }
 }
