@@ -21,6 +21,7 @@ message Emp{
     string first_name = 2;
     string last_name = 3; 
     string email = 4;
+    string image = 5;
 }
 
 message Service{
@@ -78,11 +79,12 @@ message FindOneResponse{
     string status = 6;
     string note_cancel = 7;
     string user = 8;
-    Emp employee = 9;
-    Service service = 10;
-    float total_price = 11;
-    string voucher_id = 12;
-    string created_at = 13;
+    string phone = 9;
+    Emp employee = 10;
+    Service service = 11;
+    float total_price = 12;
+    string voucher_id = 13;
+    string created_at = 14;
 }
 
 message DeleteBookingRequest{

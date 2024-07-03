@@ -7,8 +7,12 @@ import {
     ICreateServiceResponse,
     IDeleteServiceRequest,
     IDeleteServiceResponse,
+    IFindBestSellerServiceRequest,
+    IFindBestSellerServiceResponse,
     IFindOneRequest,
     IFindOneResponse,
+    IFindRecommendedServiceRequest,
+    IFindRecommendedServiceResponse,
     IFindServiceResponse,
     IUpdateServiceRequest,
     IUpdateServiceResponse,
@@ -41,5 +45,19 @@ export class ServicesBookingController {
     @GrpcMethod('ServicesService', 'UpdateService')
     async updateService(data: IUpdateServiceRequest): Promise<IUpdateServiceResponse> {
         return await this.servicesBookingService.update(data);
+    }
+
+    @GrpcMethod('ServicesService', 'FindBestSellerServices')
+    async findBestSeller(
+        data: IFindBestSellerServiceRequest,
+    ): Promise<IFindBestSellerServiceResponse> {
+        return await this.servicesBookingService.findBestSeller(data);
+    }
+
+    @GrpcMethod('ServicesService', 'FindRecommendedServices')
+    async findRecommended(
+        data: IFindRecommendedServiceRequest,
+    ): Promise<IFindRecommendedServiceResponse> {
+        return await this.servicesBookingService.findRecommended(data);
     }
 }

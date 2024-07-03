@@ -31,6 +31,7 @@ import {
 } from 'nestjs-grpc-exceptions';
 import { PrismaService } from 'src/core/prisma/prisma.service';
 import { DateType } from 'src/proto_build/booking/booking_pb';
+import { ProfileUserService } from '../external_services/profileUsers/profile.service';
 
 const MINUTE_IN_MS = 60000;
 
@@ -39,6 +40,7 @@ export class BookingService {
     constructor(
         private prismaService: PrismaService,
         private readonly mailerService: MailerService,
+        private readonly profileUserService: ProfileUserService,
     ) {}
 
     private calPrice(amount, discountPercent, maxDiscount, minAppValue) {
@@ -134,6 +136,7 @@ export class BookingService {
                     last_name: true,
                     email: true,
                     work_shift: true,
+                    image: true,
                     services: {
                         select: { service: true },
                     },
@@ -152,6 +155,7 @@ export class BookingService {
                             firstName: emp.first_name,
                             lastName: emp.last_name,
                             email: emp.email,
+                            image: emp.image,
                         }));
 
                     // check employee is booked
@@ -285,41 +289,6 @@ export class BookingService {
 
             if (employeesForSlot.length == 0) throw new GrpcItemNotFoundException('NO_EMPLOYEE');
 
-            // // create booking
-            // const booking = await this.prismaService.booking.create({
-            //     data: {
-            //         start_time: new Date(dataCreate.startTime),
-            //         end_time: new Date(
-            //             new Date(dataCreate.startTime).getTime() +
-            //                 service.time_service.duration * MINUTE_IN_MS,
-            //         ),
-            //         Service: {
-            //             connect: {
-            //                 id: dataCreate.service,
-            //             },
-            //         },
-            //         Employee: {
-            //             connect: {
-            //                 id: employeesForSlot[
-            //                     Math.floor(Math.random() * employeesForSlot.length)
-            //                 ].id,
-            //             },
-            //         },
-            //         note: dataCreate.note,
-            //         status: StatusBooking.PENDING,
-            //         user: user.email,
-            //         Voucher: voucherDiscount ? { connect: { id: dataCreate.voucher } } : {},
-            //         total_price: voucherDiscount
-            //             ? this.calPrice(
-            //                   service.price,
-            //                   voucherDiscount.discount_percent,
-            //                   voucherDiscount.max_discount,
-            //                   voucherDiscount.min_app_value,
-            //               )
-            //             : service.price,
-            //     },
-            // });
-
             // Prepare the booking data
             let bookingData: any = {
                 start_time: new Date(dataCreate.startTime),
@@ -360,6 +329,12 @@ export class BookingService {
                 );
             }
 
+            // find phone number in auth service
+            const phoneNumber = (await this.profileUserService.getProfile({user: user})).phone
+            if (phoneNumber){
+                bookingData.phone = phoneNumber
+            }
+
             // Create booking
             const booking = await this.prismaService.booking.create({
                 data: bookingData,
@@ -387,12 +362,14 @@ export class BookingService {
                     note: true,
                     note_cancel: true,
                     status: true,
+                    phone: true,
                     Employee: {
                         select: {
                             id: true,
                             first_name: true,
                             last_name: true,
                             email: true,
+                            image: true,
                         },
                     },
                     Service: {
@@ -424,6 +401,7 @@ export class BookingService {
                     firstName: booking.Employee.first_name,
                     lastName: booking.Employee.last_name,
                     email: booking.Employee.email,
+                    image: booking.Employee.image,
                 },
                 service: {
                     id: booking.Service.id,
@@ -431,6 +409,7 @@ export class BookingService {
                     images: booking.Service.images,
                 },
                 user: data.user.email,
+                phone: booking.phone,
                 totalPrice: booking.total_price.toNumber(),
                 createdAt: booking.created_at.toISOString(),
             };
@@ -439,72 +418,74 @@ export class BookingService {
         }
     }
 
-    async findBooking(data: IFindOneRequest): Promise<IFindOneResponse> {
-        try {
-            const booking = await this.prismaService.booking.findUnique({
-                where: {
-                    id: data.id,
-                },
-                select: {
-                    id: true,
-                    start_time: true,
-                    end_time: true,
-                    note: true,
-                    status: true,
-                    note_cancel: true,
-                    Employee: {
-                        select: {
-                            id: true,
-                            first_name: true,
-                            last_name: true,
-                            email: true,
-                        },
-                    },
-                    Service: {
-                        select: {
-                            id: true,
-                            name: true,
-                            images: true,
-                        },
-                    },
-                    user: true,
-                    total_price: true,
-                    voucher_id: true,
-                    created_at: true,
-                },
-            });
+    // async findBooking(data: IFindOneRequest): Promise<IFindOneResponse> {
+    //     try {
+    //         const booking = await this.prismaService.booking.findUnique({
+    //             where: {
+    //                 id: data.id,
+    //             },
+    //             select: {
+    //                 id: true,
+    //                 start_time: true,
+    //                 end_time: true,
+    //                 note: true,
+    //                 status: true,
+    //                 note_cancel: true,
+    //                 Employee: {
+    //                     select: {
+    //                         id: true,
+    //                         first_name: true,
+    //                         last_name: true,
+    //                         email: true,
+    //                         image: true,
+    //                     },
+    //                 },
+    //                 Service: {
+    //                     select: {
+    //                         id: true,
+    //                         name: true,
+    //                         images: true,
+    //                     },
+    //                 },
+    //                 user: true,
+    //                 total_price: true,
+    //                 voucher_id: true,
+    //                 created_at: true,
+    //             },
+    //         });
 
-            if (!booking) throw new GrpcItemNotFoundException('BOOKING_NOT_FOUND');
+    //         if (!booking) throw new GrpcItemNotFoundException('BOOKING_NOT_FOUND');
 
-            return {
-                user: booking.user,
-                id: booking.id,
-                date: booking.start_time.toISOString(),
-                endTime: booking.end_time.toISOString(),
-                startTime: booking.start_time.toISOString(),
-                noteCancel: booking.note_cancel,
-                note: booking.note,
-                status: booking.status,
-                employee: {
-                    id: booking.Employee.id,
-                    firstName: booking.Employee.first_name,
-                    lastName: booking.Employee.last_name,
-                    email: booking.Employee.email,
-                },
-                service: {
-                    id: booking.Service.id,
-                    name: booking.Service.name,
-                    images: booking.Service.images,
-                },
-                // TODO calculate total price
-                totalPrice: Number(booking.total_price),
-                voucherId: booking.voucher_id,
-                createdAt: booking.created_at.toISOString(),
-            };
-        } catch (error) {
-            throw error;
-        }
-    }
+    //         return {
+    //             user: booking.user,
+    //             id: booking.id,
+    //             date: booking.start_time.toISOString(),
+    //             endTime: booking.end_time.toISOString(),
+    //             startTime: booking.start_time.toISOString(),
+    //             noteCancel: booking.note_cancel,
+    //             note: booking.note,
+    //             status: booking.status,
+    //             employee: {
+    //                 id: booking.Employee.id,
+    //                 firstName: booking.Employee.first_name,
+    //                 lastName: booking.Employee.last_name,
+    //                 email: booking.Employee.email,
+    //                 image: booking.Employee.image,
+    //             },
+    //             service: {
+    //                 id: booking.Service.id,
+    //                 name: booking.Service.name,
+    //                 images: booking.Service.images,
+    //             },
+    //             // TODO calculate total price
+    //             totalPrice: Number(booking.total_price),
+    //             voucherId: booking.voucher_id,
+    //             createdAt: booking.created_at.toISOString(),
+    //         };
+    //     } catch (error) {
+    //         throw error;
+    //     }
+    // }
 
     async updateStatusBooking(data: IUpdateStatusBookingRequest): Promise<IFindOneResponse> {
         const { user, status, id } = data;
@@ -548,12 +529,14 @@ export class BookingService {
                     note: true,
                     status: true,
                     note_cancel: true,
+                    phone: true,
                     Employee: {
                         select: {
                             id: true,
                             first_name: true,
                             last_name: true,
                             email: true,
+                            image: true,
                         },
                     },
                     Service: {
@@ -579,11 +562,13 @@ export class BookingService {
                 noteCancel: bookingUpdate.note_cancel,
                 note: bookingUpdate.note,
                 status: bookingUpdate.status,
+                phone: bookingUpdate.phone,
                 employee: {
                     id: bookingUpdate.Employee.id,
                     firstName: bookingUpdate.Employee.first_name,
                     lastName: bookingUpdate.Employee.last_name,
                     email: bookingUpdate.Employee.email,
+                    image: bookingUpdate.Employee.image,
                 },
                 service: {
                     id: bookingUpdate.Service.id,
@@ -657,7 +642,7 @@ export class BookingService {
                 await this.mailerService.sendMail({
                     to: bookingDeleted.user,
                     subject: 'Booking Canceled',
-                    text: `Your booking with service ${bookingDeleted.Service.name} at ${bookingDeleted.start_time.toISOString()} is canceled.\nBecause ${note}`,
+                    text: `Your booking with service ${bookingDeleted.Service.name} at ${bookingDeleted.start_time.toUTCString()} is canceled.\nBecause ${note}`,
                 });
             }
         } catch (error) {
@@ -668,7 +653,7 @@ export class BookingService {
     }
 
     async findAllBookingWithFilter(
-        email: string | undefined,
+        email: string | string[],
         domain: string,
         dataFilter: Omit<IFindAllBookingRequest, 'user'>,
     ): Promise<IFindAllBookingResponse> {
@@ -743,12 +728,14 @@ export class BookingService {
                 note: true,
                 note_cancel: true,
                 status: true,
+                phone: true,
                 Employee: {
                     select: {
                         id: true,
                         first_name: true,
                         last_name: true,
                         email: true,
+                        image: true,
                     },
                 },
                 Service: {
@@ -775,11 +762,13 @@ export class BookingService {
                 note: booking.note,
                 noteCancel: booking.note_cancel,
                 status: booking.status,
+                phone: booking.phone,
                 employee: {
                     id: booking.Employee.id,
                     firstName: booking.Employee.first_name,
                     lastName: booking.Employee.last_name,
                     email: booking.Employee.email,
+                    image: booking.Employee.image,
                 },
                 service: {
                     id: booking.Service.id,

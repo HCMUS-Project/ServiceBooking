@@ -7,7 +7,11 @@ import {
     ICreateServiceResponse,
     IDeleteServiceRequest,
     IDeleteServiceResponse,
+    IFindBestSellerServiceRequest,
+    IFindBestSellerServiceResponse,
     IFindOneResponse,
+    IFindRecommendedServiceRequest,
+    IFindRecommendedServiceResponse,
     IFindServiceRequest,
     IFindServiceResponse,
     IUpdateServiceRequest,
@@ -110,7 +114,7 @@ export class ServicesBookingService {
                     breakEnd: service.time_service.break_end,
                 },
                 createdAt: service.created_at.getTime(),
-                numberRating: service.number_rating
+                numberRating: service.number_rating,
             };
         } catch (error) {
             throw error;
@@ -127,6 +131,9 @@ export class ServicesBookingService {
             name?: {
                 contains: string;
             };
+            rating?: {
+                gte?: number;
+            };
         }
 
         let filter: Filter = { domain };
@@ -135,7 +142,11 @@ export class ServicesBookingService {
         if (dataFilter.priceHigher) filter.price.gte = dataFilter.priceHigher;
         if (dataFilter.priceLower) filter.price.lte = dataFilter.priceLower;
         if (dataFilter.name) filter.name = { contains: dataFilter.name };
-
+        if (dataFilter.rating) {
+            filter.rating = {};
+            filter.rating.gte = dataFilter.rating;
+        }
+        // console.log(dataFilter, filter);
         return filter;
     }
 
@@ -150,6 +161,7 @@ export class ServicesBookingService {
         ) {
             throw new GrpcInvalidArgumentException('INVALID_DATA');
         }
+        // console.log(dataFilter);
 
         // get filter data
         const filter = this.createFilter(dataFilter, domain);
@@ -261,6 +273,87 @@ export class ServicesBookingService {
                 timeService: {
                     ...timeService,
                 },
+            };
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async findBestSeller(
+        data: IFindBestSellerServiceRequest,
+    ): Promise<IFindBestSellerServiceResponse> {
+        try {
+            const services = await this.prismaService.services.findMany({
+                where: {
+                    id: {
+                        in: (
+                            await this.prismaService.booking.groupBy({
+                                by: ['service_id'],
+                                where: {
+                                    AND: [
+                                        { status: 'SUCCESS' },
+                                        { Service: { domain: data.domain } },
+                                    ],
+                                },
+                                _count: { service_id: true },
+                                orderBy: { _count: { service_id: 'desc' } },
+                                take: 5,
+                            })
+                        ).map(booking => booking.service_id),
+                    },
+                },
+                include: { time_service: true },
+            });
+
+            return {
+                services: services.map(service => ({
+                    ...service,
+                    numberRating: service.number_rating,
+                    timeService: {
+                        startTime: service.time_service.start_time,
+                        endTime: service.time_service.end_time,
+                        duration: service.time_service.duration,
+                        breakStart: service.time_service.break_start,
+                        breakEnd: service.time_service.break_end,
+                    },
+                    createdAt: service.created_at.getTime(),
+                })),
+            };
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async findRecommended(
+        data: IFindRecommendedServiceRequest,
+    ): Promise<IFindRecommendedServiceResponse> {
+        try {
+            const services = await this.prismaService.services.findMany({
+                where: {
+                    domain: data.domain,
+                },
+                take: 5,
+                orderBy: {
+                    rating: 'desc',
+                },
+                include: {
+                    time_service: true,
+                },
+            });
+
+            return {
+                services: services.map(service => ({
+                    ...service,
+                    numberRating: service.number_rating,
+                    timeService: {
+                        startTime: service.time_service.start_time,
+                        endTime: service.time_service.end_time,
+                        duration: service.time_service.duration,
+                        breakStart: service.time_service.break_start,
+                        breakEnd: service.time_service.break_end,
+                    },
+                    createdAt: service.created_at.getTime(),
+                })),
             };
         } catch (error) {
             throw error;

@@ -10,6 +10,8 @@ service ServicesService {
     rpc FindServices (FindServicesRequest) returns (FindServicesResponse);
     rpc DeleteService (DeleteServiceRequest) returns (DeleteServiceResponse);
     rpc UpdateService (UpdateServiceRequest) returns (UpdateServiceResponse);
+    rpc FindBestSellerServices(FindBestSellerServiceRequest) returns (FindBestSellerServiceResponse);
+    rpc FindRecommendedServices(FindRecommendedServiceRequest) returns (FindRecommendedServiceResponse);
 }
 
 message FindServicesRequest {
@@ -17,6 +19,7 @@ message FindServicesRequest {
     optional float price_lower = 2;
     optional float price_higher = 3;
     optional string name = 4;
+    optional float rating = 5;
 }
 
 message FindServicesResponse {
@@ -104,4 +107,20 @@ message DeleteServiceRequest{
 
 message DeleteServiceResponse{
     string result = 3;
+}
+
+message FindBestSellerServiceRequest {
+    string domain = 1;
+}
+
+message FindBestSellerServiceResponse {
+    repeated FindOneResponse services = 1;
+}
+
+message FindRecommendedServiceRequest {
+    string domain = 1;
+}
+
+message FindRecommendedServiceResponse {
+    repeated FindOneResponse services = 1;
 }

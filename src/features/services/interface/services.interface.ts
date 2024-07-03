@@ -3,8 +3,12 @@ import {
     CreateServiceResponse,
     DeleteServiceRequest,
     DeleteServiceResponse,
+    FindBestSellerServiceRequest,
+    FindBestSellerServiceResponse,
     FindOneRequest,
     FindOneResponse,
+    FindRecommendedServiceRequest,
+    FindRecommendedServiceResponse,
     FindServicesRequest,
     FindServicesResponse,
     UpdateServiceRequest,
@@ -36,4 +40,16 @@ export interface IUpdateServiceRequest extends Omit<UpdateServiceRequest.AsObjec
 }
 export interface IUpdateServiceResponse extends Omit<UpdateServiceResponse.AsObject, 'imagesList'> {
     images: string[];
+}
+
+export interface IFindBestSellerServiceRequest extends FindBestSellerServiceRequest.AsObject {}
+export interface IFindBestSellerServiceResponse
+    extends Omit<FindBestSellerServiceResponse.AsObject, 'servicesList'> {
+    services: IFindOneResponse[];
+}
+
+export interface IFindRecommendedServiceRequest extends FindRecommendedServiceRequest.AsObject {}
+export interface IFindRecommendedServiceResponse
+    extends Omit<FindRecommendedServiceResponse.AsObject, 'servicesList'> {
+    services: IFindOneResponse[];
 }

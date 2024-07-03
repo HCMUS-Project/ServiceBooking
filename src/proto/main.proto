@@ -5,6 +5,7 @@ import "employee/employee.proto";
 import "voucher/voucher.proto";
 import "review/review.proto";
 import "booking/booking.proto";
+import "auth/profile.proto";
 
 package main;
 

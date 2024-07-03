@@ -1,6 +1,7 @@
 model Booking {
     id          String   @id @default(uuid())
     user        String
+    phone       String   @default("default phone number")
     service_id  String
     voucher_id  String?
     employee_id String
