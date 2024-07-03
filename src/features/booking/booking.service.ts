@@ -704,7 +704,7 @@ export class BookingService {
         if (dataFilter.date.length > 0) {
             whereClause.start_time = {
                 gte: startDate,
-                lt: endDate,
+                lte: endDate,
             };
         }
 
