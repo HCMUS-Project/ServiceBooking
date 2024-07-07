@@ -1,19 +1,17 @@
 import { SharedBullConfigurationFactory } from '@nestjs/bullmq';
 import { Injectable } from '@nestjs/common';
 import { QueueOptions } from 'bullmq';
-import configQueue from '../configs/queue.config';
+import { getConfig } from '../configs/queue.config';
+import { ConfigService } from '@nestjs/config';
 
-/**
- * Represents a QueueProvider that implements the SharedBullConfigurationFactory interface.
- * This class is responsible for creating a shared configuration for the queue.
- */
 @Injectable()
+/**
+ * Represents a provider for the queue configuration.
+ */
 export class QueueProvider implements SharedBullConfigurationFactory {
-    /**
-     * Creates a shared configuration for the queue.
-     * @returns The created QueueOptions configuration.
-     */
+    constructor(private configService: ConfigService) {}
+
     createSharedConfiguration(): QueueOptions {
-        return configQueue;
+        return getConfig(this.configService);
     }
 }

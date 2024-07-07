@@ -382,7 +382,7 @@ export class BookingService {
                 );
             }
 
-            // find phone number in auth service
+            //todo: find phone number in auth service
             const phoneNumber = (await this.profileUserService.getProfile({ user: user })).phone;
             if (phoneNumber) {
                 bookingData.phone = phoneNumber;
@@ -395,7 +395,7 @@ export class BookingService {
 
             this.bookingQueue.add(
                 'notify',
-                { hello: 'world' },
+                { email: user.email, bookingId: booking.id, domain: user.domain },
                 {
                     attempts: 3,
                     removeOnComplete: true,

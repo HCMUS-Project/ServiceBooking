@@ -1,17 +1,22 @@
+import { ConfigService } from '@nestjs/config';
 import { ConnectionOptions, QueueOptions } from 'bullmq';
 
 /**
- * Configuration for the BullMQ queue.
+ * Retrieves the configuration options for the queue.
+ * @param configService - The configuration service used to retrieve the values.
+ * @returns The configuration options for the queue.
  */
-const config: QueueOptions = {
-    connection: {
-        host: process.env.REDIS_HOST || 'localhost',
-        port: process.env.REDIS_PORT || 6379,
-        password: process.env.REDIS_PASS || '',
-        db: process.env.REDIS_DB || 0,
-        user: process.env.REDIS_USER || '',
-    } as ConnectionOptions,
-    prefix: process.env.REDIS_PREFIX || 'bullmq',
-};
+function getConfig(configService: ConfigService) {
+    return {
+        connection: {
+            host: configService.get('REDIS_HOST') || 'localhost',
+            port: configService.get('REDIS_PORT') || 6379,
+            password: configService.get('REDIS_PASS') || '',
+            db: configService.get('REDIS_DB') || 0,
+            user: configService.get('REDIS_USER') || '',
+        } as ConnectionOptions,
+        prefix: configService.get('REDIS_PREFIX') || 'bullmq',
+    };
+}
 
-export default config;
+export { getConfig };
