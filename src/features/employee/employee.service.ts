@@ -65,7 +65,7 @@ export class EmployeeService {
             // check services are exist
             if (
                 (await this.prismaService.services.count({
-                    where: { id: { in: services } },
+                    where: { id: { in: services }, deleted_at: null },
                 })) != services.length
             )
                 throw new GrpcItemNotFoundException('SERVICES_NOT_FOUND');
@@ -114,6 +114,11 @@ export class EmployeeService {
                         include: {
                             service: true,
                         },
+                        // where: {
+                        //     service: {
+                        //         deleted_at: null,
+                        //     },
+                        // },
                     },
                 },
             });
@@ -266,7 +271,7 @@ export class EmployeeService {
             // check services are exist
             if (
                 (await this.prismaService.services.count({
-                    where: { id: { in: services } },
+                    where: { id: { in: services }, deleted_at: null },
                 })) != services.length
             )
                 throw new GrpcItemNotFoundException('SERVICES_NOT_FOUND');
@@ -294,14 +299,14 @@ export class EmployeeService {
                 phone,
                 work_days: workDays.length > 0 ? workDays : undefined,
                 work_shift: workShift.length > 0 ? workShift : undefined,
-                image
+                image,
             };
-            
+
             if (image !== undefined) {
                 const imageUrl = await this.supabaseService.uploadImageAndGetLink([image]);
                 updateData.image = imageUrl[0];
             }
-            
+
             await this.prismaService.employee.update({
                 where: { id },
                 data: updateData,

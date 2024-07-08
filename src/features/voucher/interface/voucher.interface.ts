@@ -5,6 +5,7 @@ import {
     DeleteVoucherResponse,
     EditVoucherRequest,
     EditVoucherResponse,
+    FindAllVouchersByTenantRequest,
     FindAllVouchersRequest,
     FindAllVouchersResponse,
     FindOneVoucherRequest,
@@ -31,3 +32,5 @@ export interface IEditVoucherResponse extends EditVoucherResponse.AsObject {}
 
 export interface IDeleteVoucherRequest extends DeleteVoucherRequest.AsObject {}
 export interface IDeleteVoucherResponse extends DeleteVoucherResponse.AsObject {}
+
+export interface IFindAllVouchersByTenantRequest extends FindAllVouchersByTenantRequest.AsObject {}

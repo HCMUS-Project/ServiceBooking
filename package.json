@@ -26,6 +26,7 @@
         "generate": "prisma generate"
     },
     "dependencies": {
+        "@getbrevo/brevo": "^2.2.0",
         "@grpc/grpc-js": "^1.10.6",
         "@grpc/proto-loader": "^0.7.12",
         "@nestjs-modules/mailer": "^1.11.2",

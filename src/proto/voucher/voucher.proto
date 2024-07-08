@@ -10,6 +10,7 @@ service VoucherService {
     rpc DeleteVoucher (DeleteVoucherRequest) returns (DeleteVoucherResponse);
     rpc FindAllVouchers (FindAllVouchersRequest) returns (FindAllVouchersResponse);
     rpc FindOneVoucher (FindOneVoucherRequest) returns (FindOneVoucherResponse);
+    rpc FindAllVouchersByTenant(FindAllVouchersByTenantRequest) returns (FindAllVouchersResponse);
 }
 
 message CreateVoucherRequest {
@@ -37,6 +38,7 @@ message Voucher{
     string created_at = 10;
     // bool is_voucher_valid = 11;
     string start_at = 11;
+    string deleted_at = 12;
 }
 
 message CreateVoucherResponse {
@@ -84,4 +86,8 @@ message FindOneVoucherRequest {
 
 message FindOneVoucherResponse {
     Voucher voucher = 1; // Found voucher
+}
+
+message FindAllVouchersByTenantRequest{
+    userToken.User user = 1; 
 }

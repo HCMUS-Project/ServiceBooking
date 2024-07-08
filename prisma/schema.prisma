@@ -122,6 +122,7 @@ model Voucher {
     created_at       DateTime @default(now())
 
     updated_at DateTime @updatedAt
+    deleted_at DateTime?
 
     Service Services  @relation(fields: [service_id], references: [id], onDelete: Cascade)
     Booking Booking[]

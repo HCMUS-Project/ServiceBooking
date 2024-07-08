@@ -44,7 +44,7 @@ export class ServicesBookingService {
             // check service is exist
             if (
                 (await this.prismaService.services.count({
-                    where: { name: service.name, domain: user.domain },
+                    where: { name: service.name, domain: user.domain, deleted_at: null },
                 })) > 0
             ) {
                 throw new GrpcItemExitException('SERVICE_EXIST');
@@ -95,7 +95,7 @@ export class ServicesBookingService {
         try {
             // find service by id
             const service = await this.prismaService.services.findUnique({
-                where: { id, domain: domain },
+                where: { id, domain: domain, deleted_at: null },
                 include: { time_service: true },
             });
 
@@ -168,7 +168,7 @@ export class ServicesBookingService {
         try {
             // find all services
             const services = await this.prismaService.services.findMany({
-                where: { ...filter },
+                where: { ...filter, deleted_at: null },
                 include: { time_service: true },
             });
 
@@ -209,12 +209,23 @@ export class ServicesBookingService {
                 throw new GrpcItemNotFoundException('SERVICE_NOT_EXIST');
 
             // delete service;
-            await this.prismaService.serviceTime.delete({
-                where: { service_id: id },
-            });
+            // await this.prismaService.serviceTime.delete({
+            //     where: { service_id: id },
+            // });
 
-            await this.prismaService.services.delete({
+            // await this.prismaService.services.delete({
+            //     where: { id },
+            // });
+            await this.prismaService.services.update({
                 where: { id },
+                data: {
+                    deleted_at: new Date(),
+                    time_service: {
+                        update: {
+                            deleted_at: new Date(),
+                        },
+                    },
+                },
             });
 
             return { result: 'success' };
@@ -235,7 +246,7 @@ export class ServicesBookingService {
             // check service is exist
             if (
                 (await this.prismaService.services.count({
-                    where: { id, domain: user.domain },
+                    where: { id, domain: user.domain, deleted_at: null },
                 })) == 0
             )
                 throw new GrpcItemNotFoundException('SERVICE_NOT_EXIST');
@@ -301,6 +312,7 @@ export class ServicesBookingService {
                             })
                         ).map(booking => booking.service_id),
                     },
+                    deleted_at: null,
                 },
                 include: { time_service: true },
             });
@@ -331,6 +343,7 @@ export class ServicesBookingService {
             const services = await this.prismaService.services.findMany({
                 where: {
                     domain: data.domain,
+                    deleted_at: null,
                 },
                 take: 5,
                 orderBy: {
