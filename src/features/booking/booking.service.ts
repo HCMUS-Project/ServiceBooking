@@ -34,6 +34,8 @@ import { DateType } from 'src/proto_build/booking/booking_pb';
 import { ProfileUserService } from '../external_services/profileUsers/profile.service';
 import { BrevoMailerService, SmtpParams } from 'src/util/brevo_mailer/brevo.service';
 import { FindTenantProfileService } from '../external_services/tenant_profile/tenant_profile.service';
+import { InjectQueue } from '@nestjs/bullmq';
+import { Queue } from 'bullmq';
 
 const MINUTE_IN_MS = 60000;
 
@@ -45,9 +47,23 @@ export class BookingService {
         private readonly profileGrpcService: ProfileUserService,
         private readonly findTenantProfileService: FindTenantProfileService,
         private readonly brevoMailerService: BrevoMailerService,
+        @InjectQueue('booking') private bookingQueue: Queue,
     ) {}
 
-    private calPrice(amount, discountPercent, maxDiscount, minAppValue) {
+    /**
+     * Calculates the price after applying a discount.
+     * @param amount - The original price.
+     * @param discountPercent - The percentage of discount to be applied.
+     * @param maxDiscount - The maximum discount amount that can be applied.
+     * @param minAppValue - The minimum applicable value for the discount to be applied.
+     * @returns The price after applying the discount.
+     */
+    private calPrice(
+        amount: number,
+        discountPercent: number,
+        maxDiscount: number,
+        minAppValue: number,
+    ) {
         let discount = amount * discountPercent;
         if (discount > maxDiscount) discount = maxDiscount;
         if (discount > amount) discount = amount;
@@ -55,6 +71,17 @@ export class BookingService {
         return amount - discount;
     }
 
+    /**
+     * Retrieves all slots within a day based on the provided parameters.
+     *
+     * @param startTime - The start time of the day in string format.
+     * @param endTime - The end time of the day in string format.
+     * @param breakStart - The start time of the break in string format.
+     * @param breakEnd - The end time of the break in string format.
+     * @param slotDuration - The duration of each slot in minutes.
+     * @param date - The date of the day in string format.
+     * @returns An array of Date objects representing the slots within the day.
+     */
     private getAllSlotInDay(
         startTime: string,
         endTime: string,
@@ -78,12 +105,23 @@ export class BookingService {
         return slots;
     }
 
+    /**
+     * Converts a given date string to the corresponding day of the week.
+     * @param date - The date string to convert.
+     * @returns The day of the week as a string.
+     */
     private convertDateToDay(date: string): string {
         const dateObj = new Date(date);
 
         return (Object.values(WorkDays) as string[])[dateObj.getDay()];
     }
 
+    /**
+     * Checks if the given time slot is available for booking with the specified work shifts.
+     * @param time - The time slot to check.
+     * @param workShift - An array of work shifts to compare against.
+     * @returns A boolean indicating whether the time slot is available with the given work shifts.
+     */
     private checkAvailableSlotWithEmployee(time: Date, workShift: string[]): boolean {
         const hours = time.getUTCHours();
         const shift =
@@ -97,6 +135,13 @@ export class BookingService {
         return workShift.includes(shift);
     }
 
+    /**
+     * Finds slot bookings based on the provided data.
+     * @param data - The data for finding slot bookings.
+     * @returns A promise that resolves to the response containing the slot bookings.
+     * @throws {GrpcItemNotFoundException} If the service is not found.
+     * @throws {Error} If an error occurs while finding the slot bookings.
+     */
     async findSlotBookings(data: IFindSlotBookingsRequest): Promise<IFindSlotBookingsResponse> {
         const { user, ...dataFilter } = data;
 
@@ -199,6 +244,14 @@ export class BookingService {
         }
     }
 
+    /**
+     * Creates a booking based on the provided data.
+     * @param data - The data for creating a booking.
+     * @returns A promise that resolves to the created booking response.
+     * @throws {GrpcPermissionDeniedException} If the user does not have the required role.
+     * @throws {GrpcItemNotFoundException} If the service or voucher is not found.
+     * @throws {GrpcItemNotFoundException} If no employee is available for the specified slot.
+     */
     async createBooking(data: ICreateBookingRequest): Promise<ICreateBookingResponse> {
         try {
             const { user, ...dataCreate } = data;
@@ -336,16 +389,25 @@ export class BookingService {
                 );
             }
 
-            // find phone number in auth service
-            const phoneNumber = (await this.profileGrpcService.getProfile({ user: user })).phone;
-            if (phoneNumber) {
-                bookingData.phone = phoneNumber;
+            //todo: find phone number in auth service
+            const phoneNumber = (await this.profileGrpcService.getProfile({  user: user  })).phone;;
+            if (phoneNumber)  {
+                bookingData.phone = phoneNumber;;
             }
 
             // Create booking
             const booking = await this.prismaService.booking.create({
                 data: bookingData,
             });
+
+            this.bookingQueue.add(
+                'notify',
+                { email: user.email, bookingId: booking.id, domain: user.domain },
+                {
+                    attempts: 3,
+                    removeOnComplete: true,
+                },
+            );
 
             return {
                 id: booking.id,
@@ -355,6 +417,13 @@ export class BookingService {
         }
     }
 
+    /**
+     * Finds a booking based on the provided criteria.
+     *
+     * @param data - The criteria to search for a booking.
+     * @returns A promise that resolves to the found booking.
+     * @throws {GrpcItemNotFoundException} If the booking is not found.
+     */
     async findOne(data: IFindOneRequest): Promise<IFindOneResponse> {
         try {
             const booking = await this.prismaService.booking.findUnique({
@@ -425,75 +494,13 @@ export class BookingService {
         }
     }
 
-    // async findBooking(data: IFindOneRequest): Promise<IFindOneResponse> {
-    //     try {
-    //         const booking = await this.prismaService.booking.findUnique({
-    //             where: {
-    //                 id: data.id,
-    //             },
-    //             select: {
-    //                 id: true,
-    //                 start_time: true,
-    //                 end_time: true,
-    //                 note: true,
-    //                 status: true,
-    //                 note_cancel: true,
-    //                 Employee: {
-    //                     select: {
-    //                         id: true,
-    //                         first_name: true,
-    //                         last_name: true,
-    //                         email: true,
-    //                         image: true,
-    //                     },
-    //                 },
-    //                 Service: {
-    //                     select: {
-    //                         id: true,
-    //                         name: true,
-    //                         images: true,
-    //                     },
-    //                 },
-    //                 user: true,
-    //                 total_price: true,
-    //                 voucher_id: true,
-    //                 created_at: true,
-    //             },
-    //         });
-
-    //         if (!booking) throw new GrpcItemNotFoundException('BOOKING_NOT_FOUND');
-
-    //         return {
-    //             user: booking.user,
-    //             id: booking.id,
-    //             date: booking.start_time.toISOString(),
-    //             endTime: booking.end_time.toISOString(),
-    //             startTime: booking.start_time.toISOString(),
-    //             noteCancel: booking.note_cancel,
-    //             note: booking.note,
-    //             status: booking.status,
-    //             employee: {
-    //                 id: booking.Employee.id,
-    //                 firstName: booking.Employee.first_name,
-    //                 lastName: booking.Employee.last_name,
-    //                 email: booking.Employee.email,
-    //                 image: booking.Employee.image,
-    //             },
-    //             service: {
-    //                 id: booking.Service.id,
-    //                 name: booking.Service.name,
-    //                 images: booking.Service.images,
-    //             },
-    //             // TODO calculate total price
-    //             totalPrice: Number(booking.total_price),
-    //             voucherId: booking.voucher_id,
-    //             createdAt: booking.created_at.toISOString(),
-    //         };
-    //     } catch (error) {
-    //         throw error;
-    //     }
-    // }
-
+    /**
+     * Updates the status of a booking.
+     * @param data - The data required to update the status of the booking.
+     * @returns A promise that resolves to the updated booking information.
+     * @throws {GrpcItemNotFoundException} If the booking is not found.
+     * @throws {GrpcPermissionDeniedException} If the booking status cannot be updated.
+     */
     async updateStatusBooking(data: IUpdateStatusBookingRequest): Promise<IFindOneResponse> {
         const { user, status, id } = data;
 
@@ -592,6 +599,13 @@ export class BookingService {
         }
     }
 
+    /**
+     * Deletes a booking based on the provided data.
+     * @param data - The data required to delete a booking.
+     * @returns A promise that resolves to the delete booking response.
+     * @throws {GrpcItemNotFoundException} If the booking is not found.
+     * @throws {GrpcPermissionDeniedException} If the booking cannot be deleted.
+     */
     async deleteBooking(data: IDeleteBookingRequest): Promise<IDeleteBookingResponse> {
         const { user, note, id } = data;
 
@@ -724,6 +738,13 @@ export class BookingService {
         return { result: 'success' };
     }
 
+    /**
+     * Retrieves all bookings with the specified filter criteria.
+     * @param email - The email address of the user.
+     * @param domain - The domain of the bookings.
+     * @param dataFilter - The filter criteria for the bookings.
+     * @returns A promise that resolves to an object containing the filtered bookings.
+     */
     async findAllBookingWithFilter(
         email: string | string[],
         domain: string,
@@ -854,6 +875,12 @@ export class BookingService {
         };
     }
 
+    /**
+     * Retrieves all bookings based on the provided filter criteria.
+     * @param data - The request object containing the filter criteria.
+     * @returns A promise that resolves to the response object containing the filtered bookings.
+     * @throws Throws an error if the user does not have the necessary permissions.
+     */
     async findAllBooking(data: IFindAllBookingRequest): Promise<IFindAllBookingResponse> {
         const { user, ...dataFilter } = data;
 
@@ -870,6 +897,12 @@ export class BookingService {
         }
     }
 
+    /**
+     * Retrieves the bookings report for a list of users.
+     * @param data - The request data containing the list of users and the current user.
+     * @returns A promise that resolves to the bookings report for the list of users.
+     * @throws {GrpcUnauthenticatedException} If the current user does not have the required permissions or if the domain is empty.
+     */
     async getBookingsReportOfListUsers(
         data: IGetBookingsReportOfListUsersRequest,
     ): Promise<IGetBookingsReportOfListUsersResponse> {
@@ -918,6 +951,14 @@ export class BookingService {
         }
     }
 
+    /**
+     * Retrieves bookings value by date type.
+     *
+     * @param data - The request data containing user information and date type.
+     * @returns A promise that resolves to the response containing the bookings report, total bookings, and total value.
+     * @throws {GrpcUnauthenticatedException} If the user does not have the required permissions.
+     * @throws {Error} If an error occurs while retrieving the bookings.
+     */
     async getBookingsValueByDateType(
         data: IGetBookingsValueByDateTypeRequest,
     ): Promise<IGetBookingsValueByDateTypeResponse> {
@@ -1056,6 +1097,12 @@ export class BookingService {
         }
     }
 
+    /**
+     * Returns the week number of the given date within its month.
+     *
+     * @param date - The date for which to calculate the week number.
+     * @returns The week number in the format "WEEK_X", where X is the week number.
+     */
     getWeekOfMonth(date: Date): string {
         // Get the first day of the month
         const firstDayOfMonth = new Date(date.getFullYear(), date.getUTCMonth(), 1);
@@ -1076,11 +1123,21 @@ export class BookingService {
         return `WEEK_${weekNumber}`;
     }
 
+    /**
+     * Returns the day of the week for a given date.
+     * @param date - The date for which to get the day of the week.
+     * @returns The day of the week as a string.
+     */
     getDayOfWeek(date: Date): string {
         const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         return days[date.getUTCDay()];
     }
 
+    /**
+     * Returns the month name for a given date.
+     * @param date - The date object for which to retrieve the month name.
+     * @returns The name of the month.
+     */
     getMonth(date: Date): string {
         const months = [
             'January',

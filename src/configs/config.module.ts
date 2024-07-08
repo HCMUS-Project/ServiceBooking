@@ -10,6 +10,7 @@ import dataBaseConfig from './database/postgres/postgres.config';
 import nodeMailerConfig from './node_mailer/node_mailer.config';
 import supabaseConfig from './supabase/supabase.config';
 import mongoConfig from './database/mongo/mongo.config';
+import cacheConfig from './cache/cache.config';
 
 @Global()
 @Module({
@@ -17,7 +18,14 @@ import mongoConfig from './database/mongo/mongo.config';
         NestConfigModule.forRoot({
             envFilePath: ['.env'],
             isGlobal: true,
-            load: [appConfig, mongoConfig, dataBaseConfig, nodeMailerConfig, supabaseConfig],
+            load: [
+                appConfig,
+                mongoConfig,
+                dataBaseConfig,
+                nodeMailerConfig,
+                supabaseConfig,
+                cacheConfig,
+            ],
         }),
     ],
     controllers: [],

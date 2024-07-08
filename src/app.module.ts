@@ -11,6 +11,7 @@ import { CacheModule } from './core/cache/modules/cache.module';
 import { PrismaModule } from './core/prisma/prisma.module';
 import { FeaturesModule } from './features/index.module';
 import { DatabaseModule } from './core/database/modules/database.module';
+import { QueueModule } from './core/queue/modules/queue.module';
 
 @Module({
     imports: [
@@ -18,6 +19,7 @@ import { DatabaseModule } from './core/database/modules/database.module';
         DatabaseModule,
         ConfigsModule,
         ContextModule,
+        QueueModule,
         CacheModule,
         PrismaModule,
         FeaturesModule,
