@@ -1,10 +1,5 @@
-import { Observable } from 'rxjs';
-import {
-    GetAllUserProfileRequest,
-    GetAllUserProfileResponse,
-    GetProfileRequest,
-    GetProfileResponse,
-} from 'src/proto_build/auth/profile_pb';
+import { Observable } from 'rxjs'; 
+import {GetAllUserProfileRequest, GetAllUserProfileResponse, GetProfileRequest, GetProfileResponse} from 'src/proto_build/external/profile_pb';
 
 export interface ProfileUsersService {
     getAllUserProfile(data: IGetAllUserProfileRequest): Observable<IGetAllUserProfileResponse>;

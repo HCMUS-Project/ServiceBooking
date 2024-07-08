@@ -32,6 +32,8 @@ import {
 import { PrismaService } from 'src/core/prisma/prisma.service';
 import { DateType } from 'src/proto_build/booking/booking_pb';
 import { ProfileUserService } from '../external_services/profileUsers/profile.service';
+import { BrevoMailerService, SmtpParams } from 'src/util/brevo_mailer/brevo.service';
+import { FindTenantProfileService } from '../external_services/tenant_profile/tenant_profile.service';
 import { InjectQueue } from '@nestjs/bullmq';
 import { Queue } from 'bullmq';
 
@@ -42,7 +44,9 @@ export class BookingService {
     constructor(
         private prismaService: PrismaService,
         private readonly mailerService: MailerService,
-        private readonly profileUserService: ProfileUserService,
+        private readonly profileGrpcService: ProfileUserService,
+        private readonly findTenantProfileService: FindTenantProfileService,
+        private readonly brevoMailerService: BrevoMailerService,
         @InjectQueue('booking') private bookingQueue: Queue,
     ) {}
 
@@ -147,6 +151,7 @@ export class BookingService {
                 where: {
                     id: dataFilter.service,
                     domain: user.domain,
+                    deleted_at: null,
                 },
                 select: {
                     id: true,
@@ -261,6 +266,7 @@ export class BookingService {
                 where: {
                     id: dataCreate.service,
                     domain: user.domain,
+                    deleted_at: null,
                 },
                 select: {
                     id: true,
@@ -276,6 +282,7 @@ export class BookingService {
                 var voucherDiscount = await this.prismaService.voucher.findUnique({
                     where: {
                         id: dataCreate.voucher,
+                        deleted_at: null,
                         Service: {
                             id: dataCreate.service,
                         },
@@ -383,9 +390,9 @@ export class BookingService {
             }
 
             //todo: find phone number in auth service
-            const phoneNumber = (await this.profileUserService.getProfile({ user: user })).phone;
-            if (phoneNumber) {
-                bookingData.phone = phoneNumber;
+            const phoneNumber = (await this.profileGrpcService.getProfile({  user: user  })).phone;;
+            if (phoneNumber)  {
+                bookingData.phone = phoneNumber;;
             }
 
             // Create booking
@@ -640,10 +647,21 @@ export class BookingService {
                     note: true,
                     status: true,
                     created_at: true,
+                    end_time: true,
                     Service: {
                         select: {
                             id: true,
                             name: true,
+                            price: true,
+                            images: true,
+                            description: true,
+                        },
+                    },
+                    Employee: {
+                        select: {
+                            first_name: true,
+                            last_name: true,
+                            image: true,
                         },
                     },
                     user: true,
@@ -652,12 +670,66 @@ export class BookingService {
 
             // send email to user if booking is canceled by tenant
             if (user.role.toString() === getEnumKeyByEnumValue(Role, Role.TENANT)) {
-                console.log('send email to user');
-                await this.mailerService.sendMail({
-                    to: bookingDeleted.user,
-                    subject: 'Booking Canceled',
-                    text: `Your booking with service ${bookingDeleted.Service.name} at ${bookingDeleted.start_time.toUTCString()} is canceled.\nBecause ${note}`,
+                // console.log('send email to user');
+                // await this.mailerService.sendMail({
+                //     to: bookingDeleted.user,
+                //     subject: 'Booking Canceled',
+                //     text: `Your booking with service ${bookingDeleted.Service.name} at ${bookingDeleted.start_time.toUTCString()} is canceled.\nBecause ${note}`,
+                // });
+                const profiles = await this.profileGrpcService.getAllUserProfile({
+                    user: data.user,
                 });
+                const profileNameCancel = profiles.users.find(
+                    user => user.email === bookingDeleted.user,
+                );
+                const tenantProfile = (
+                    await this.findTenantProfileService.findTenantProfileByTenantId({
+                        domain: data.user.domain,
+                        tenantId: undefined,
+                    })
+                ).tenantProfile;
+                const to = [
+                    {
+                        email: bookingDeleted.user,
+                        name: profileNameCancel.name,
+                    },
+                ];
+                const templateId = 4;
+                const linkDesktop = 'https://saas-30shine.vercel.app';
+                const linkMobile = 'https://nvukhoi.id.vn/result';
+                const params = {
+                    email: bookingDeleted.user,
+                    type: 'Booking',
+                    name: profileNameCancel.name,
+                    domain: data.user.domain,
+                    id: bookingDeleted.id,
+                    date: bookingDeleted.created_at.toISOString(),
+                    noteCancel: data.note,
+                    logolink: tenantProfile.logo,
+                    descriptionTenant: tenantProfile.description,
+                    trackOrderLinkDesktop: `${linkDesktop}/user-info/order`,
+                    trackOrderLinkMobile: `${linkMobile}`,
+                    continueShoppingLinkDesktop: `${linkDesktop}`,
+                    continueShoppingLinkMobile: `${linkMobile},`,
+                    items: [
+                        {
+                            name: bookingDeleted.Service.name,
+                            price: bookingDeleted.Service.price,
+                            img: bookingDeleted.Service.images[0],
+                            startTime: `${bookingDeleted.start_time.getHours()}:${bookingDeleted.start_time.getMinutes()}`,
+                            endTime: `${bookingDeleted.end_time.getHours()}:${bookingDeleted.end_time.getMinutes()}`,
+                            description: bookingDeleted.Service.description,
+                            employeeFirstName: bookingDeleted.Employee.first_name,
+                            employeeLastName: bookingDeleted.Employee.last_name,
+                            imgEmployee: bookingDeleted.Employee.image,
+                        },
+                    ],
+                } as SmtpParams;
+                const sendMailResponse = await this.brevoMailerService.sendTransactionalEmail(
+                    to,
+                    templateId,
+                    params,
+                );
             }
         } catch (error) {
             throw error;

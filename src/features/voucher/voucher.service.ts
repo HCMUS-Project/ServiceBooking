@@ -7,6 +7,7 @@ import {
     IDeleteVoucherResponse,
     IEditVoucherRequest,
     IEditVoucherResponse,
+    IFindAllVouchersByTenantRequest,
     IFindAllVouchersRequest,
     IFindAllVouchersResponse,
     IFindOneVoucherRequest,
@@ -36,7 +37,7 @@ export class VoucherService {
         try {
             // check if serviceId exists in the service table
             const service = await this.prismaService.services.findUnique({
-                where: { id: voucher.serviceId },
+                where: { id: voucher.serviceId, deleted_at: null },
             });
 
             if (!service) {
@@ -89,6 +90,7 @@ export class VoucherService {
                 where: {
                     domain: data.user.domain,
                     id: data.service,
+                    deleted_at: null,
                 },
                 select: {
                     id: true,
@@ -109,6 +111,7 @@ export class VoucherService {
                     start_at: {
                         lte: new Date(),
                     },
+                    deleted_at: null,
                 },
             });
             // console.log('abc')
@@ -126,6 +129,43 @@ export class VoucherService {
                     expireAt: voucher.expire_at.toString(),
                     createdAt: voucher.created_at.toString(),
                     startAt: voucher.start_at.toString(),
+                    deletedAt: voucher.deleted_at ? voucher.deleted_at.toString() : null,
+                })),
+            };
+        } catch (error) {
+            throw error;
+        }
+    }
+
+    async findAllVouchersByTenant(
+        data: IFindAllVouchersByTenantRequest,
+    ): Promise<IFindAllVouchersResponse> {
+        try {
+            // find all vouchers by domain
+            const vouchers = await this.prismaService.voucher.findMany({
+                where: {
+                    Service: {
+                        domain: data.user.domain,
+                    },
+                    deleted_at: null,
+                },
+            });
+
+            return {
+                vouchers: vouchers.map(voucher => ({
+                    vouchersList: [],
+                    id: voucher.id,
+                    type: voucher.type,
+                    serviceId: voucher.service_id,
+                    voucherName: voucher.voucher_name,
+                    voucherCode: voucher.voucher_code,
+                    maxDiscount: voucher.max_discount,
+                    minAppValue: voucher.min_app_value,
+                    discountPercent: voucher.discount_percent,
+                    expireAt: voucher.expire_at.toString(),
+                    createdAt: voucher.created_at.toString(),
+                    startAt: voucher.start_at.toString(),
+                    deletedAt: voucher.deleted_at ? voucher.deleted_at.toString() : null,
                 })),
             };
         } catch (error) {
@@ -140,6 +180,7 @@ export class VoucherService {
             const voucher = await this.prismaService.voucher.findUnique({
                 where: {
                     id,
+                    deleted_at: null,
                 },
             });
 
@@ -162,6 +203,7 @@ export class VoucherService {
                 expireAt: voucher.expire_at.toString(),
                 createdAt: voucher.created_at.toString(),
                 startAt: voucher.start_at.toString(),
+                deletedAt: voucher.deleted_at ? voucher.deleted_at.toString() : null,
             } as IVoucher;
 
             return {
@@ -181,7 +223,7 @@ export class VoucherService {
         try {
             // Find the category first
             const voucher = await this.prismaService.voucher.findUnique({
-                where: { id: dataUpdate.id },
+                where: { id: dataUpdate.id, deleted_at: null },
             });
 
             // console.log(voucher)
@@ -262,8 +304,11 @@ export class VoucherService {
             //     where: { id: id },
             // });
 
-            await this.prismaService.voucher.delete({
+            await this.prismaService.voucher.update({
                 where: { id },
+                data: {
+                    deleted_at: null,
+                },
             });
 
             return { result: 'success' };
