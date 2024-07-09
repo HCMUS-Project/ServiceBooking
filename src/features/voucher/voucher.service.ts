@@ -232,7 +232,7 @@ export class VoucherService {
             if (!voucher) {
                 throw new GrpcItemNotFoundException('VOUCHER_NOT_FOUND');
             }
-
+            // console.log(dataUpdate)
             // Create an object that includes only the fields that are not undefined
             const updateData: Partial<typeof dataUpdate> = {};
             for (const key in dataUpdate) {
@@ -256,7 +256,7 @@ export class VoucherService {
                             dbKey = 'discount_percent';
                             break;
                         case 'expireAt':
-                            dbKey = 'expired_at';
+                            dbKey = 'expire_at';
                             updateData[dbKey] = new Date(dataUpdate[key]);
                             break;
                         case 'startAt':
@@ -266,10 +266,12 @@ export class VoucherService {
                         default:
                             dbKey = key;
                     }
-                    updateData[dbKey] = dataUpdate[key];
+                    if (!updateData.hasOwnProperty(dbKey)) {
+                        updateData[dbKey] = dataUpdate[key];
+                    }
                 }
             }
-
+            // console.log(dataUpdate, updateData);
             // If the category exists, perform the update
             const updatedVoucher = await this.prismaService.voucher.update({
                 where: { id: dataUpdate.id },

@@ -42,6 +42,7 @@ export class VoucherController {
 
     @GrpcMethod('VoucherService', 'EditVoucher')
     async update(data: IEditVoucherRequest): Promise<IEditVoucherResponse> {
+        // console.log(data)
         return await this.voucherService.update(data);
     }
 
