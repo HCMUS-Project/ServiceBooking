@@ -390,9 +390,9 @@ export class BookingService {
             }
 
             //todo: find phone number in auth service
-            const phoneNumber = (await this.profileGrpcService.getProfile({  user: user  })).phone;;
-            if (phoneNumber)  {
-                bookingData.phone = phoneNumber;;
+            const phoneNumber = (await this.profileGrpcService.getProfile({ user: user })).phone;
+            if (phoneNumber) {
+                bookingData.phone = phoneNumber;
             }
 
             // Create booking
@@ -998,20 +998,22 @@ export class BookingService {
                 } = {};
 
                 bookings.forEach(booking => {
-                    // console.log(order);
-                    const dayOfWeek = this.getDayOfWeek(new Date(booking.created_at));
-                    // console.log(weekNumber);
-                    if (bookingsByWeek[dayOfWeek]) {
-                        bookingsByWeek[dayOfWeek].totalBookings += 1;
-                        bookingsByWeek[dayOfWeek].totalValue += Number(booking.total_price);
-                    } else {
-                        bookingsByWeek[dayOfWeek] = {
-                            totalBookings: 1,
-                            totalValue: Number(booking.total_price),
-                        };
+                    if (this.isSameWeek(booking.created_at, new Date())) {
+                        // console.log(order);
+                        const dayOfWeek = this.getDayOfWeek(new Date(booking.created_at));
+                        // console.log(weekNumber);
+                        if (bookingsByWeek[dayOfWeek]) {
+                            bookingsByWeek[dayOfWeek].totalBookings += 1;
+                            bookingsByWeek[dayOfWeek].totalValue += Number(booking.total_price);
+                        } else {
+                            bookingsByWeek[dayOfWeek] = {
+                                totalBookings: 1,
+                                totalValue: Number(booking.total_price),
+                            };
+                        }
+                        totalBookings += 1;
+                        totalValue += Number(booking.total_price);
                     }
-                    totalBookings += 1;
-                    totalValue += Number(booking.total_price);
                 });
                 for (const [week, report] of Object.entries(bookingsByWeek)) {
                     reportBookings.push({
@@ -1027,20 +1029,22 @@ export class BookingService {
                 } = {};
 
                 bookings.forEach(booking => {
-                    // console.log(booking);
-                    const mongth = this.getMonth(new Date(booking.created_at));
-                    // console.log(mongth);
-                    if (bookingsByYear[mongth]) {
-                        bookingsByYear[mongth].totalBookings += 1;
-                        bookingsByYear[mongth].totalValue += Number(booking.total_price);
-                    } else {
-                        bookingsByYear[mongth] = {
-                            totalBookings: 1,
-                            totalValue: Number(booking.total_price),
-                        };
+                    if (booking.created_at.getUTCFullYear() === new Date().getUTCFullYear()) {
+                        // console.log(booking);
+                        const mongth = this.getMonth(new Date(booking.created_at));
+                        // console.log(mongth);
+                        if (bookingsByYear[mongth]) {
+                            bookingsByYear[mongth].totalBookings += 1;
+                            bookingsByYear[mongth].totalValue += Number(booking.total_price);
+                        } else {
+                            bookingsByYear[mongth] = {
+                                totalBookings: 1,
+                                totalValue: Number(booking.total_price),
+                            };
+                        }
+                        totalBookings += 1;
+                        totalValue += Number(booking.total_price);
                     }
-                    totalBookings += 1;
-                    totalValue += Number(booking.total_price);
                 });
 
                 for (const [week, report] of Object.entries(bookingsByYear)) {
@@ -1058,7 +1062,10 @@ export class BookingService {
 
                 bookings.forEach(booking => {
                     // console.log(booking.created_at.getUTCMonth() , new Date().getMonth())
-                    if (booking.created_at.getUTCMonth() === new Date().getMonth()) {
+                    if (
+                        booking.created_at.getUTCMonth() === new Date().getMonth() &&
+                        booking.created_at.getUTCFullYear() === new Date().getUTCFullYear()
+                    ) {
                         // console.log('haha');
                         const weekNumberInMonth = this.getWeekOfMonth(new Date(booking.created_at));
                         // console.log(weekNumberInMonth);
@@ -1095,6 +1102,23 @@ export class BookingService {
         } catch (error) {
             throw error;
         }
+    }
+
+    isSameWeek(date1: Date, date2: Date): boolean {
+        // Get the start of the week (Monday) for the first date
+        const startOfWeek1 = new Date(date1);
+        startOfWeek1.setDate(date1.getDate() - date1.getDay() + (date1.getDay() === 0 ? -6 : 1));
+
+        // Get the start of the week (Monday) for the second date
+        const startOfWeek2 = new Date(date2);
+        startOfWeek2.setDate(date2.getDate() - date2.getDay() + (date2.getDay() === 0 ? -6 : 1));
+
+        // Compare the start of the week dates
+        return (
+            startOfWeek1.getFullYear() === startOfWeek2.getFullYear() &&
+            startOfWeek1.getMonth() === startOfWeek2.getMonth() &&
+            startOfWeek1.getDate() === startOfWeek2.getDate()
+        );
     }
 
     /**
