@@ -3,3 +3,8 @@ export enum StatusBooking {
     SUCCESS = 'SUCCESS',
     CANCEL = 'CANCEL',
 }
+
+export enum TypeBooking {
+    Created = 'Created',
+    Cancel = 'Cancel',
+}

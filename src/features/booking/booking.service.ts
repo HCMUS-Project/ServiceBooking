@@ -23,7 +23,7 @@ import { Injectable } from '@nestjs/common';
 import { convertTimeStringsToDateObjects } from 'src/util/time/TimeToDate';
 import { getEnumKeyByEnumValue } from 'src/util/convert_enum/get_key_enum';
 import { Role } from 'src/proto_build/auth/user_token_pb';
-import { StatusBooking } from 'src/common/enums/status_booking.enum';
+import { StatusBooking, TypeBooking } from 'src/common/enums/status_booking.enum';
 import { MailerService } from '@nestjs-modules/mailer';
 import {
     GrpcPermissionDeniedException,
@@ -402,7 +402,19 @@ export class BookingService {
 
             this.bookingQueue.add(
                 'notify',
-                { email: user.email, bookingId: booking.id, domain: user.domain },
+                {
+                    email: user.email,
+                    service: {
+                        name: service.name,
+                    },
+                    employees: {
+                        firstName: employeesForSlot[0].firstName,
+                        lastName: employeesForSlot[0].lastName,
+                    },
+                    booking_id: booking.id,
+                    domain: user.domain,
+                    type: TypeBooking.Created,
+                },
                 {
                     attempts: 3,
                     removeOnComplete: true,
@@ -725,12 +737,35 @@ export class BookingService {
                         },
                     ],
                 } as SmtpParams;
-                const sendMailResponse = await this.brevoMailerService.sendTransactionalEmail(
-                    to,
-                    templateId,
-                    params,
-                );
+                await this.brevoMailerService.sendTransactionalEmail(to, templateId, params);
             }
+
+            // send notify to worker
+            this.bookingQueue.add(
+                'notify',
+                {
+                    email: user.email,
+                    service: {
+                        id: bookingDeleted.Service.id,
+                        name: bookingDeleted.Service.name,
+                    },
+                    employees: {
+                        firstName: bookingDeleted.Employee.first_name,
+                        lastName: bookingDeleted.Employee.last_name,
+                    },
+                    booking: {
+                        id: bookingDeleted.id,
+                        startTime: bookingDeleted.start_time,
+                        endTime: bookingDeleted.end_time,
+                    },
+                    domain: user.domain,
+                    type: TypeBooking.Cancel,
+                },
+                {
+                    attempts: 3,
+                    removeOnComplete: true,
+                },
+            );
         } catch (error) {
             throw error;
         }

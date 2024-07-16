@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ClientProxyFactory, ClientsModule, Transport } from '@nestjs/microservices';
 import { join } from 'path';
-import { ConfigService } from '@nestjs/config'; 
-import { ProfileUserService } from './profileUsers/profile.service';
+import { ConfigService } from '@nestjs/config';
+
 @Module({
     imports: [ClientsModule],
     providers: [
@@ -25,7 +25,7 @@ import { ProfileUserService } from './profileUsers/profile.service';
                 });
             },
             inject: [ConfigService],
-        }, 
+        },
         {
             provide: 'GRPC_ECOMMERCE_TENANT',
             useFactory: (configService: ConfigService) => {
