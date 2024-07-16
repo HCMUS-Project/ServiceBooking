@@ -85,6 +85,7 @@ export class ServicesBookingService {
                     ...timeService,
                 },
                 numberRating: serviceNew.number_rating,
+                totalBook: 0,
             };
         } catch (error) {
             throw error;
@@ -96,7 +97,18 @@ export class ServicesBookingService {
             // find service by id
             const service = await this.prismaService.services.findUnique({
                 where: { id, domain: domain, deleted_at: null },
-                include: { time_service: true },
+                include: {
+                    time_service: true,
+                    _count: {
+                        select: {
+                            Booking: {
+                                where: {
+                                    status: 'SUCCESS',
+                                },
+                            },
+                        },
+                    },
+                },
             });
 
             // check service is exist
@@ -115,6 +127,7 @@ export class ServicesBookingService {
                 },
                 createdAt: service.created_at.getTime(),
                 numberRating: service.number_rating,
+                totalBook: service._count.Booking,
             };
         } catch (error) {
             throw error;
@@ -169,7 +182,18 @@ export class ServicesBookingService {
             // find all services
             const services = await this.prismaService.services.findMany({
                 where: { ...filter, deleted_at: null },
-                include: { time_service: true },
+                include: {
+                    time_service: true,
+                    _count: {
+                        select: {
+                            Booking: {
+                                where: {
+                                    status: 'SUCCESS',
+                                },
+                            },
+                        },
+                    },
+                },
             });
 
             return {
@@ -184,6 +208,7 @@ export class ServicesBookingService {
                         breakEnd: service.time_service.break_end,
                     },
                     createdAt: service.created_at.getTime(),
+                    totalBook: service._count.Booking,
                 })),
             };
         } catch (error) {
@@ -274,6 +299,15 @@ export class ServicesBookingService {
                 },
                 include: {
                     time_service: true,
+                    _count: {
+                        select: {
+                            Booking: {
+                                where: {
+                                    status: 'SUCCESS',
+                                },
+                            },
+                        },
+                    },
                 },
             });
 
@@ -284,6 +318,7 @@ export class ServicesBookingService {
                 timeService: {
                     ...timeService,
                 },
+                totalBook: serviceNew._count.Booking,
             };
         } catch (error) {
             throw error;
@@ -314,7 +349,18 @@ export class ServicesBookingService {
                     },
                     deleted_at: null,
                 },
-                include: { time_service: true },
+                include: {
+                    time_service: true,
+                    _count: {
+                        select: {
+                            Booking: {
+                                where: {
+                                    status: 'SUCCESS',
+                                },
+                            },
+                        },
+                    },
+                },
             });
 
             return {
@@ -329,6 +375,7 @@ export class ServicesBookingService {
                         breakEnd: service.time_service.break_end,
                     },
                     createdAt: service.created_at.getTime(),
+                    totalBook: service._count.Booking,
                 })),
             };
         } catch (error) {
@@ -351,6 +398,15 @@ export class ServicesBookingService {
                 },
                 include: {
                     time_service: true,
+                    _count: {
+                        select: {
+                            Booking: {
+                                where: {
+                                    status: 'SUCCESS',
+                                },
+                            },
+                        },
+                    },
                 },
             });
 
@@ -366,6 +422,7 @@ export class ServicesBookingService {
                         breakEnd: service.time_service.break_end,
                     },
                     createdAt: service.created_at.getTime(),
+                    totalBook: service._count.Booking,
                 })),
             };
         } catch (error) {
