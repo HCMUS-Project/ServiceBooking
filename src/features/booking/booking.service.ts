@@ -823,7 +823,7 @@ export class BookingService {
             user: email,
         };
 
-        if (serviceIds.length > 0) {
+        if (serviceIds.length >= 0) {
             whereClause.service_id = {
                 in: serviceIds,
             };
